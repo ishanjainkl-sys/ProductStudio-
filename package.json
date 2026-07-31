@@ -1,0 +1,40 @@
+{
+  "name": "productstudio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ProductStudio — component-first, JSON-driven website builder",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tooling/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "npm run generate -w @productstudio/api",
+    "db:migrate": "npm run migrate -w @productstudio/api",
+    "db:seed": "npm run seed -w @productstudio/api",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@11.16.0",
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "argon2@0.41.1": true,
+    "esbuild@0.28.1": true,
+    "esbuild@0.21.5": true,
+    "prisma@6.19.3": true,
+    "sharp@0.34.5": true
+  }
+}
