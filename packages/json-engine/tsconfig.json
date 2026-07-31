@@ -1,0 +1,9 @@
+{
+  "extends": "@productstudio/tsconfig/library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "preserve"
+  },
+  "include": ["src/**/*"]
+}
