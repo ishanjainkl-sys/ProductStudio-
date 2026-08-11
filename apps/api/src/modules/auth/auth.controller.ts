@@ -76,6 +76,15 @@ export async function me(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+export async function updateMe(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await authService.updateProfile(req.user!.id, req.body);
+    res.json({ data: { user } });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function refresh(req: Request, res: Response, next: NextFunction) {
   try {
     const token = req.cookies?.ps_refresh as string | undefined;
@@ -88,6 +97,44 @@ export async function refresh(req: Request, res: Response, next: NextFunction) {
     const result = await authService.refreshSession(token);
     setAuthCookies(res, result.access, result.refresh);
     res.json({ data: { user: result.user } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+import fs from "node:fs/promises";
+import path from "node:path";
+import crypto from "node:crypto";
+
+export async function uploadAvatar(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: { code: "BAD_REQUEST", message: "No file provided" } });
+      return;
+    }
+    const file = req.file;
+    const env = loadEnv();
+    const avatarDir = path.join(env.UPLOAD_DIR, "avatars");
+    await fs.mkdir(avatarDir, { recursive: true });
+
+    // Create random filename
+    const ext = path.extname(file.originalname) || ".png";
+    const filename = `${req.user!.id}_${crypto.randomBytes(8).toString("hex")}${ext}`;
+    const filePath = path.join(avatarDir, filename);
+    await fs.writeFile(filePath, file.buffer);
+
+    const url = `/uploads/avatars/${filename}`;
+    const user = await authService.updateAvatar(req.user!.id, url);
+    res.json({ data: { user } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function removeAvatar(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await authService.updateAvatar(req.user!.id, null);
+    res.json({ data: { user } });
   } catch (err) {
     next(err);
   }

@@ -111,7 +111,16 @@ export async function refreshSession(refreshToken: string) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new UnauthenticatedError();
-  return { id: user.id, email: user.email, role: toApiRole(user.role) };
+  const { passwordHash, ...safeUser } = user;
+  return { ...safeUser, role: toApiRole(user.role) };
+}
+
+export async function updateAvatar(userId: string, url: string | null) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { profilePictureUrl: url },
+  });
+  return { id: user.id, email: user.email, role: toApiRole(user.role), profilePictureUrl: user.profilePictureUrl };
 }
 
 export async function createUser(input: {
@@ -132,3 +141,18 @@ export async function createUser(input: {
     },
   });
 }
+
+export async function updateProfile(userId: string, data: any) {
+  const payload = { ...data };
+  if (payload.dateOfBirth) {
+    payload.dateOfBirth = new Date(payload.dateOfBirth);
+  }
+  // Convert any string matching "true"/"false" if necessary, but fastify/express handles json boolean
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: payload,
+  });
+  const { passwordHash, ...safeUser } = user;
+  return { ...safeUser, role: toApiRole(user.role) };
+}
+

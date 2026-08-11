@@ -10,6 +10,12 @@ export async function listTemplates() {
       versions: {
         orderBy: { versionNumber: "desc" },
         take: 1,
+        include: {
+          pages: {
+            where: { isHome: true },
+            select: { contentJson: true }
+          }
+        }
       },
     },
     orderBy: { createdAt: "desc" },
@@ -21,6 +27,7 @@ export async function listTemplates() {
     description: t.description,
     latestVersionId: t.versions[0]?.id ?? null,
     latestVersionNumber: t.versions[0]?.versionNumber ?? null,
+    homePageContent: t.versions[0]?.pages?.[0]?.contentJson ?? null,
     createdAt: t.createdAt.toISOString(),
   }));
 }

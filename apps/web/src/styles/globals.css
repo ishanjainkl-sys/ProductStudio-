@@ -7,11 +7,254 @@ body {
   height: 100%;
 }
 
+:root {
+  --ps-primary: #128068;
+  --ps-primary-dark: #073329;
+  --ps-surface: #ffffff;
+  --ps-canvas: #f0f2f5;
+  --ps-border: #e2e5ea;
+  --ps-text: #1a1c21;
+  --ps-muted: #737985;
+  --ps-success: #158b53;
+  --ps-warning: #bd8619;
+  --ps-danger: #c93636;
+
+  --background: 220 16% 96%;
+  --foreground: 220 20% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 20% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 20% 12%;
+  --primary: 167 75% 30%; /* Tealish */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 167 30% 96%;
+  --secondary-foreground: 167 75% 15%;
+  --muted: 220 16% 96%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 167 60% 97%;
+  --accent-foreground: 167 75% 30%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 88%;
+  --input: 220 15% 88%;
+  --ring: 167 75% 30%;
+  --radius: 0.875rem;
+}
+
+.dark {
+  --background: 167 15% 5%;
+  --foreground: 167 10% 90%;
+  --card: 167 10% 8%;
+  --card-foreground: 167 10% 90%;
+  --popover: 167 10% 8%;
+  --popover-foreground: 167 10% 90%;
+  --primary: 167 75% 45%;
+  --primary-foreground: 167 15% 5%;
+  --secondary: 167 10% 15%;
+  --secondary-foreground: 167 10% 95%;
+  --muted: 167 10% 15%;
+  --muted-foreground: 167 5% 65%;
+  --accent: 167 20% 15%;
+  --accent-foreground: 167 10% 95%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 85.7% 97.3%;
+  --border: 167 10% 15%;
+  --input: 167 10% 15%;
+  --ring: 167 75% 45%;
+}
+
 body {
-  @apply bg-neutral-100 text-neutral-900 antialiased;
+  @apply bg-neutral-100 text-neutral-900 antialiased transition-colors dark:bg-neutral-950 dark:text-neutral-50;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(59, 111, 240, 0.18);
+  color: #0f1f4d;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+input,
+select,
+textarea {
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(59, 111, 240, 0.75);
+  outline-offset: 2px;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  /* Cards */
+  .ps-card {
+    @apply rounded-3xl border border-neutral-100/50 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 dark:border-neutral-800/80 dark:bg-[#111111] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)];
+  }
+
+  .ps-card-interactive {
+    @apply ps-card hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] cursor-pointer dark:hover:shadow-[0_12px_40px_rgb(0,0,0,0.4)];
+  }
+
+  /* Form Elements */
+  .ps-input {
+    @apply w-full rounded-2xl border border-neutral-200/80 bg-neutral-50/30 px-5 py-3 text-[14px] text-neutral-900 shadow-[0_2px_4px_rgb(0,0,0,0.02)] outline-none placeholder:text-neutral-400 transition-all hover:border-neutral-300 focus:border-primary-500 focus:bg-white focus:ring-[3px] focus:ring-primary-500/15 dark:border-neutral-800 dark:bg-[#1A1A1A] dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:hover:border-neutral-700 dark:focus:border-primary-500 dark:focus:bg-[#141414];
+  }
+
+  .ps-select {
+    @apply ps-input appearance-none bg-[linear-gradient(45deg,transparent_50%,#737985_50%),linear-gradient(135deg,#737985_50%,transparent_50%)] bg-[position:calc(100%-20px)_50%,calc(100%-15px)_50%] bg-[size:5px_5px,5px_5px] bg-no-repeat pr-12 dark:bg-[linear-gradient(45deg,transparent_50%,#a7acb5_50%),linear-gradient(135deg,#a7acb5_50%,transparent_50%)];
+  }
+
+  .ps-label {
+    @apply mb-2 block text-[13px] font-bold text-neutral-700 dark:text-neutral-300;
+  }
+
+  /* Buttons */
+  .ps-button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-primary-700 px-6 py-2.5 text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(18,128,104,0.15)] transition-all hover:-translate-y-0.5 hover:bg-primary-800 hover:shadow-[0_6px_16px_rgba(18,128,104,0.25)] active:translate-y-0 active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:bg-primary-600 dark:shadow-none dark:hover:bg-primary-700;
+  }
+
+  .ps-button-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200/80 bg-white px-6 py-2.5 text-[14px] font-bold text-neutral-700 shadow-[0_2px_4px_rgb(0,0,0,0.02)] transition-all hover:bg-neutral-50 hover:border-neutral-300 hover:shadow-[0_4px_8px_rgb(0,0,0,0.04)] active:scale-95 dark:border-neutral-800 dark:bg-[#1A1A1A] dark:text-neutral-200 dark:hover:bg-[#222] dark:hover:border-neutral-700;
+  }
+
+  .ps-button-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-bold text-neutral-600 transition-all hover:bg-neutral-100 hover:text-neutral-900 active:scale-95 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white;
+  }
+  
+  .ps-button-destructive {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-danger px-6 py-2.5 text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(211,58,58,0.15)] transition-all hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-[0_6px_16px_rgba(211,58,58,0.25)] active:translate-y-0 active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:bg-red-600 dark:shadow-none dark:hover:bg-red-700;
+  }
+
+  /* Utility Components */
+  .ps-kicker {
+    @apply font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-primary-600 dark:text-primary-400;
+  }
+
+  .ps-modal-backdrop {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-5 backdrop-blur-sm transition-all;
+  }
+
+  .ps-modal {
+    @apply w-full max-w-lg rounded-3xl border border-white/60 bg-white p-8 shadow-[0_24px_60px_rgb(0,0,0,0.12)] dark:border-neutral-800 dark:bg-[#111111] dark:shadow-[0_24px_60px_rgb(0,0,0,0.4)];
+  }
+
+  .ps-tab {
+    @apply rounded-xl px-4 py-2 text-[13px] font-bold text-neutral-500 transition-all hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white;
+  }
+
+  .ps-tab-active {
+    @apply bg-neutral-900 text-white shadow-sm dark:bg-white dark:text-neutral-900 hover:bg-neutral-800 hover:text-white dark:hover:bg-neutral-200 dark:hover:text-neutral-900;
+  }
+
+  .ps-icon-button {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-neutral-500 transition-all hover:border-neutral-200 hover:bg-white hover:text-neutral-900 hover:shadow-[0_2px_8px_rgb(0,0,0,0.04)] active:scale-95 dark:hover:border-neutral-700/80 dark:hover:bg-neutral-800 dark:hover:text-white;
+  }
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes landing-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.landing-grid {
+  background-image:
+    linear-gradient(to right, rgba(51, 47, 42, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(51, 47, 42, 0.055) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(to bottom, black, transparent 92%);
+}
+
+.landing-reveal {
+  animation: landing-reveal 0.7s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.landing-delay-1 {
+  animation-delay: 80ms;
+}
+
+.landing-delay-2 {
+  animation-delay: 160ms;
+}
+
+.landing-delay-3 {
+  animation-delay: 240ms;
+}
+
+.landing-float {
+  animation: landing-float 8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .landing-reveal,
+  .landing-float {
+    animation: none;
+  }
 }

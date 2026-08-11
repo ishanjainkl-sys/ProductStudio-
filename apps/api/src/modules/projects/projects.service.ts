@@ -32,6 +32,13 @@ export async function listProjects(
     prisma.project.count({ where }),
     prisma.project.findMany({
       where,
+      include: {
+        theme: true,
+        pages: {
+          where: { isHome: true },
+          select: { contentJson: true }
+        }
+      },
       orderBy: { updatedAt: "desc" },
       skip: (opts.page - 1) * opts.pageSize,
       take: opts.pageSize,
@@ -47,6 +54,8 @@ export async function listProjects(
       updatedAt: p.updatedAt.toISOString(),
       deletedAt: p.deletedAt?.toISOString() ?? null,
       saveStatus: "saved" as const,
+      homePageContent: p.pages?.[0]?.contentJson ?? null,
+      themeTokens: p.theme?.tokensJson ?? null,
     })),
     page: opts.page,
     pageSize: opts.pageSize,
