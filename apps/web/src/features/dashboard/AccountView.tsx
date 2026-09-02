@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { api, ApiClientError } from "@/lib/api-client";
+import { CheckCircle } from "lucide-react";
 
 const DEFAULT_AVATAR = "https://img.magnific.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?semt=ais_test_b&w=740&q=80";
 
@@ -259,9 +260,7 @@ export function AccountView() {
                         {user.email}
                         {user.isVerified && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[9px] uppercase tracking-wide font-bold text-blue-700 ring-1 ring-blue-200/50 dark:bg-blue-900/30 dark:text-blue-400 dark:ring-blue-800/50">
-                            <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                            </svg>
+                            <CheckCircle className="h-3 w-3" />
                             Verified
                           </span>
                         )}

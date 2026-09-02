@@ -220,20 +220,20 @@ export const FeatureGridComponent: ComponentDefinition<{
     padding: spacingSchema,
   }),
   styleMap: { padding: (v) => pad(v) },
-  render: ({ props, className, style }) => (
-    <section className={className} style={style}>
-      <h2 style={{ marginBottom: 24 }}>{props.title}</h2>
+  render: ({ props, className, style, breakpoint }) => (
+    <section className={className} style={{ ...style, color: "#111318" }}>
+      <h2 style={{ margin: "0 0 24px", color: "#111318" }}>{props.title}</h2>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${props.columns}, minmax(0, 1fr))`,
+          gridTemplateColumns: breakpoint === "mobile" ? "1fr" : `repeat(${props.columns}, minmax(0, 1fr))`,
           gap: 24,
         }}
       >
         {props.features.map((f) => (
           <article key={f.title}>
-            <h3 style={{ margin: "0 0 8px" }}>{f.title}</h3>
-            <p style={{ margin: 0, color: "#6b7280" }}>{f.description}</p>
+            <h3 style={{ margin: "0 0 8px", color: "#111318" }}>{f.title}</h3>
+            <p style={{ margin: 0, color: "#4b5563" }}>{f.description}</p>
           </article>
         ))}
       </div>

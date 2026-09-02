@@ -11,7 +11,12 @@ export class ApiClientError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  let url = path;
+  if (path.startsWith("/api/")) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    url = baseUrl + path;
+  }
+  const res = await fetch(url, {
     ...init,
     credentials: "include",
     headers: {

@@ -74,6 +74,9 @@ export interface PageDocument {
     updatedAt: string;
     createdBy: UserId;
     version: number;
+    viewport?: "desktop" | "tablet" | "mobile";
+    isBlank?: boolean;
+    dimensions?: Partial<Record<Breakpoint, { width: number; height: number }>>;
   };
 }
 

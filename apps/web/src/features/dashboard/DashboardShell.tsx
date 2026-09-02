@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, LogOut, Settings } from "lucide-react";
+import { Menu, LogOut, Settings, Plus } from "lucide-react";
 import { MotionReveal } from "@/components/motion";
 
 import { api } from "@/lib/api-client";
@@ -104,9 +104,9 @@ function DashboardHeaderActions() {
       <Button
         type="button"
         onClick={() => triggerCreate()}
-        className="rounded-full bg-[#181716] px-4 py-2.5 text-[12px] font-semibold hover:bg-[#181716]/90 sm:px-5 lg:hidden"
+        className="rounded-md bg-blue-600 px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-blue-700 sm:px-5 lg:hidden"
       >
-        <span className="text-base leading-none">+</span>
+        <Plus className="h-4 w-4 mr-1.5 inline-block" />
         New project
       </Button>
       <div className="flex items-center gap-2">
@@ -128,17 +128,17 @@ function DashboardShellInner({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground transition-colors  ">
+    <div className="flex min-h-screen bg-neutral-50 dark:bg-[#111111] text-foreground transition-colors">
       <DashboardSidebar className="hidden lg:flex" />
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Desktop Header */}
-        <header className="sticky top-0 z-50 hidden h-[74px] items-center justify-end border-b border-border/40 bg-background/90 /90 px-8 backdrop-blur-xl lg:flex transition-colors">
+        <header className="sticky top-0 z-50 hidden h-[74px] items-center justify-end bg-transparent px-8 lg:flex transition-colors">
           <DashboardHeaderActions />
         </header>
 
         {/* Mobile Header */}
-        <header className="sticky top-0 z-50 flex h-[74px] items-center justify-between border-b border-border/40 bg-background/90 /90 px-5 backdrop-blur-xl lg:hidden transition-colors">
+        <header className="sticky top-0 z-50 flex h-[74px] items-center justify-between border-b border-border/40 bg-background/90 px-5 backdrop-blur-xl lg:hidden transition-colors">
           <div className="flex items-center gap-3">
             <Button
               type="button"
@@ -162,7 +162,7 @@ function DashboardShellInner({ children }: { children: ReactNode }) {
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-[260px] max-w-[85vw] p-0 [&>button]:hidden">
+        <SheetContent side="left" className="w-[220px] max-w-[85vw] p-0 [&>button]:hidden">
           <DashboardSidebar className="relative top-0 flex h-full w-full border-0" onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>

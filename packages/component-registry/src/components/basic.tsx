@@ -138,6 +138,7 @@ export const ButtonComponent: ComponentDefinition<{
       <a
         href={isEditing ? undefined : props.href}
         className={className}
+        draggable={isEditing ? false : undefined}
         style={{
           ...style,
           display: "inline-block",
@@ -183,8 +184,49 @@ export const ImageComponent: ComponentDefinition<{
     width: (v) => ({ width: String(v) }),
     borderRadius: (v) => ({ "border-radius": `${v}px` }),
   },
-  render: ({ props, className, style }) => {
+  render: ({ props, className, style, isEditing, nodeId }) => {
     if (!props.src) {
+      if (isEditing) {
+        return (
+          <label
+            className={className}
+            style={{
+              ...style,
+              background: "#f5f6f8",
+              minHeight: 160,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#6b7280",
+              cursor: "pointer",
+            }}
+            role="button"
+            aria-label={props.alt}
+          >
+            Image placeholder
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  window.dispatchEvent(
+                    new CustomEvent("ps-upload-image", {
+                      detail: { nodeId, src: reader.result },
+                    })
+                  );
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
+        );
+      }
+
       return (
         <div
           className={className}
@@ -204,6 +246,32 @@ export const ImageComponent: ComponentDefinition<{
         </div>
       );
     }
+    if (isEditing) {
+      return (
+        <label className={className} style={{ ...style, cursor: "pointer", display: "inline-block" }}>
+          <img src={props.src} alt={props.alt} draggable={false} style={{ width: "100%", height: "100%", borderRadius: "inherit", display: "block" }} />
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                window.dispatchEvent(
+                  new CustomEvent("ps-upload-image", {
+                    detail: { nodeId, src: reader.result },
+                  })
+                );
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+        </label>
+      );
+    }
+
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img className={className} style={style} src={props.src} alt={props.alt} />

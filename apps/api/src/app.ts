@@ -12,6 +12,7 @@ import { projectsRouter } from "./modules/projects/projects.routes.js";
 import { pageEntityRouter } from "./modules/pages/pages.routes.js";
 import { templatesRouter } from "./modules/templates/templates.routes.js";
 import { assetEntityRouter } from "./modules/assets/assets.routes.js";
+import { aiRouter } from "./modules/ai/ai.routes.js";
 
 export function createApp() {
   const env = loadEnv();
@@ -40,6 +41,7 @@ export function createApp() {
   app.use("/api/pages", requireAuth, csrfGuard, pageEntityRouter);
   app.use("/api/templates", templatesRouter);
   app.use("/api/assets", assetEntityRouter);
+  app.use("/api/ai", aiRouter);
 
   app.use(errorHandler);
   return app;

@@ -57,6 +57,17 @@ export const pageDocumentSchema = z.object({
     updatedAt: z.string(),
     createdBy: z.string(),
     version: z.number().int().nonnegative(),
+    viewport: z.enum(["desktop", "tablet", "mobile"]).optional(),
+    isBlank: z.boolean().optional(),
+    dimensions: z
+      .record(
+        z.enum(["desktop", "tablet", "mobile"]),
+        z.object({
+          width: z.number(),
+          height: z.number(),
+        })
+      )
+      .optional(),
   }),
 });
 

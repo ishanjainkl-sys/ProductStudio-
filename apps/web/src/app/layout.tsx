@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "../styles/globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { GlobalZoomManager } from "@/components/GlobalZoomManager";
 
 export const metadata: Metadata = {
   title: "ProductStudio",
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <GlobalZoomManager />
           {children}
         </ThemeProvider>
       </body>

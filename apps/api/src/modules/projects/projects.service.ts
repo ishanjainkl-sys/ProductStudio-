@@ -137,6 +137,7 @@ export async function createBlankProject(ownerId: string, input: Extract<CreateP
       name: "Home",
       slug: "/",
       createdBy: ownerId,
+      viewport: input.viewport,
     });
 
     const page = await tx.page.create({

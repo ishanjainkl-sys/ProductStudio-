@@ -13,6 +13,7 @@ export function createEmptyPageDocument(input: {
   name: string;
   slug: string;
   createdBy: UserId;
+  viewport?: "desktop" | "tablet" | "mobile";
 }): PageDocument {
   const now = new Date().toISOString();
   return {
@@ -41,6 +42,8 @@ export function createEmptyPageDocument(input: {
       updatedAt: now,
       createdBy: input.createdBy,
       version: 1,
+      viewport: input.viewport,
+      isBlank: true,
     },
   };
 }

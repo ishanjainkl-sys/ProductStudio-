@@ -38,6 +38,12 @@ interface BuilderStore {
   leftTab: "components" | "pages";
   propTab: "content" | "style" | "layout" | "responsive" | "advanced";
 
+  // Canvas View State
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+
+
   hydrate: (input: {
     page: PageDocument;
     projectId: string;
@@ -54,6 +60,7 @@ interface BuilderStore {
   insertFromLibrary: (componentType: string, parentId: string, index: number) => void;
   move: (nodeId: string, parentId: string, index: number) => void;
   updateProps: (nodeId: string, patch: Record<string, unknown>) => void;
+  updatePageDimensions: (bp: Breakpoint, width: number, height: number) => void;
   resetResponsiveProp: (nodeId: string, key: string) => void;
   removeSelected: () => void;
   duplicateSelected: () => void;
@@ -61,6 +68,7 @@ interface BuilderStore {
   redo: () => void;
   save: (manual?: boolean) => Promise<void>;
   replacePageDocument: (doc: PageDocument) => void;
+  setCanvasView: (zoom: number, offsetX: number, offsetY: number) => void;
 }
 
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -89,6 +97,9 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   expectedVersion: 1,
   leftTab: "components",
   propTab: "content",
+  zoom: 1,
+  offsetX: 0,
+  offsetY: 0,
 
   hydrate: ({ page, projectId, projectName, theme, version }) => {
     set({
@@ -97,6 +108,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       projectName,
       theme,
       expectedVersion: version,
+      activeBreakpoint: (page.metadata?.viewport as Breakpoint) || "desktop",
       selectedNodeId: null,
       undoStack: [],
       redoStack: [],
@@ -110,6 +122,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   setBreakpoint: (bp) => set({ activeBreakpoint: bp }),
   setLeftTab: (tab) => set({ leftTab: tab }),
   setPropTab: (tab) => set({ propTab: tab }),
+  setCanvasView: (zoom, offsetX, offsetY) => set({ zoom, offsetX, offsetY }),
 
   commit: (next) => {
     const { page, undoStack } = get();
@@ -144,6 +157,22 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     const { page, activeBreakpoint, commit } = get();
     if (!page) return;
     commit(updateNodeProps(page, nodeId, activeBreakpoint, patch));
+  },
+
+  updatePageDimensions: (bp, width, height) => {
+    const { page, commit } = get();
+    if (!page) return;
+    const currentDims = page.metadata.dimensions || {};
+    commit({
+      ...page,
+      metadata: {
+        ...page.metadata,
+        dimensions: {
+          ...currentDims,
+          [bp]: { width, height },
+        },
+      },
+    });
   },
 
   resetResponsiveProp: (nodeId, key) => {

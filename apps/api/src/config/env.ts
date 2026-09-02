@@ -18,6 +18,7 @@ const envSchema = z.object({
   EXPORT_DIR: z.string().default("./exports"),
   MAX_ASSET_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  GEMINI_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

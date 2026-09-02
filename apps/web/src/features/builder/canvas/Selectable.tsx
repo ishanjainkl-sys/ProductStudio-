@@ -41,16 +41,25 @@ export function Selectable({
       }}
       {...listeners}
       {...attributes}
+      data-ps-node={node.id}
+      data-ps-accepts={def.acceptsChildren ? "true" : "false"}
       onClick={(e) => {
         e.stopPropagation();
         selectNode(node.id);
+        const article = (e.target as HTMLElement).closest('[data-ps-member-index]');
+        if (article) {
+          const index = parseInt(article.getAttribute('data-ps-member-index')!, 10);
+          window.dispatchEvent(new CustomEvent('ps-edit-team-member', { detail: { nodeId: node.id, index } }));
+        } else {
+          window.dispatchEvent(new CustomEvent('ps-edit-team-member', { detail: null }));
+        }
       }}
       onMouseEnter={(e) => {
         e.stopPropagation();
         setHovered(node.id);
       }}
       onMouseLeave={() => setHovered(null)}
-      className="relative"
+      className={`relative ${def.type === "basic.button" || def.type === "forms.submit" ? "inline-block" : ""}`}
       style={{
         outline: selected
           ? "2px solid #3b6ff0"

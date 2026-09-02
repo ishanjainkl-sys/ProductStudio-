@@ -41,13 +41,13 @@ export const StatsCounterComponent: ComponentDefinition<{
     padding: spacingSchema,
   }),
   styleMap: { padding: (v) => pad(v) },
-  render: ({ props, className, style }) => (
+  render: ({ props, className, style, breakpoint }) => (
     <div
       className={className}
       style={{
         ...style,
         display: "grid",
-        gridTemplateColumns: `repeat(${props.stats.length}, 1fr)`,
+        gridTemplateColumns: breakpoint === "mobile" ? "1fr" : `repeat(${props.stats.length}, 1fr)`,
         gap: 16,
         textAlign: "center",
       }}
@@ -63,7 +63,7 @@ export const StatsCounterComponent: ComponentDefinition<{
 };
 
 export const TeamGridComponent: ComponentDefinition<{
-  members: { name: string; role: string }[];
+  members: { name: string; role: string; imageUrl?: string }[];
   padding: SpacingBox;
 }> = {
   type: "business.team-grid",
@@ -81,34 +81,48 @@ export const TeamGridComponent: ComponentDefinition<{
     padding: { top: 32, bottom: 32, left: 24, right: 24 },
   },
   propsSchema: z.object({
-    members: z.array(z.object({ name: z.string(), role: z.string() })),
+    members: z.array(z.object({ name: z.string(), role: z.string(), imageUrl: z.string().optional() })),
     padding: spacingSchema,
   }),
   styleMap: { padding: (v) => pad(v) },
-  render: ({ props, className, style }) => (
+  render: ({ props, className, style, isEditing, breakpoint }) => (
     <div
       className={className}
       style={{
         ...style,
         display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateColumns: breakpoint === "mobile" ? "1fr" : "repeat(3, 1fr)",
         gap: 24,
       }}
     >
-      {props.members.map((m) => (
-        <article key={m.name} style={{ textAlign: "center" }}>
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: "50%",
-              background: "#eef4ff",
-              margin: "0 auto 12px",
-            }}
-            aria-hidden
-          />
-          <h3 style={{ margin: "0 0 4px" }}>{m.name}</h3>
-          <p style={{ margin: 0, color: "#6b7280" }}>{m.role}</p>
+      {props.members.map((m, i) => (
+        <article key={m.name + i} style={{ textAlign: "center", cursor: isEditing ? 'pointer' : 'default' }} data-ps-member-index={i}>
+          {m.imageUrl ? (
+            <img
+              src={m.imageUrl.startsWith("ast_") ? `/api/assets/${m.imageUrl}` : m.imageUrl}
+              alt={m.name}
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: "50%",
+                objectFit: "cover",
+                margin: "0 auto 12px",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: "50%",
+                background: "#eef4ff",
+                margin: "0 auto 12px",
+              }}
+              aria-hidden
+            />
+          )}
+          <h3 style={{ margin: "0 0 4px", color: "#111827", fontSize: "16px", fontWeight: "600" }}>{m.name}</h3>
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "14px" }}>{m.role}</p>
         </article>
       ))}
     </div>

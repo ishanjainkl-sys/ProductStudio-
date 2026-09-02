@@ -5,6 +5,7 @@ export const createProjectSchema = z.discriminatedUnion("source", [
     source: z.literal("blank"),
     name: z.string().min(1).max(120),
     description: z.string().max(2000).optional(),
+    viewport: z.enum(["desktop", "tablet", "mobile"]).optional(),
   }),
   z.object({
     source: z.literal("template"),
