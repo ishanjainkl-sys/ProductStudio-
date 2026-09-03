@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { BREAKPOINT_WIDTHS } from "@productstudio/shared-types";
 import { useBuilderStore } from "../state/builder-store";
 import { PageFrame } from "./PageFrame";
@@ -13,6 +13,11 @@ export function Canvas() {
     const breakpoint = useBuilderStore((s) => s.activeBreakpoint);
     const selectNode = useBuilderStore((s) => s.selectNode);
     const updateProps = useBuilderStore((s) => s.updateProps);
+    const pasteCopied = useBuilderStore((s) => s.pasteCopied);
+    const copySelected = useBuilderStore((s) => s.copySelected);
+    const duplicateSelected = useBuilderStore((s) => s.duplicateSelected);
+    const copiedNode = useBuilderStore((s) => s.copiedNode);
+    const selectedNodeId = useBuilderStore((s) => s.selectedNodeId);
 
     const zoom = useBuilderStore((s) => s.zoom);
     const offsetX = useBuilderStore((s) => s.offsetX);
@@ -23,6 +28,15 @@ export function Canvas() {
     const isDragging = useRef(false);
     const lastMousePos = useRef({ x: 0, y: 0 });
     const isSpaceDown = useRef(false);
+    const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
+
+    useEffect(() => {
+        function handleClick() {
+            setContextMenu(null);
+        }
+        window.addEventListener("click", handleClick);
+        return () => window.removeEventListener("click", handleClick);
+    }, []);
 
     // Initial centering
     useEffect(() => {
@@ -277,6 +291,10 @@ export function Canvas() {
                     selectNode('page');
                 }
             }}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({ x: e.clientX, y: e.clientY });
+            }}
             id="canvas-viewport"
         >
             <div
@@ -292,6 +310,46 @@ export function Canvas() {
             </div>
 
             <TeamMemberEditor />
+
+            {contextMenu && (
+                <div
+                    className="fixed z-50 rounded-md bg-white p-1 text-sm shadow-xl border border-neutral-200 dark:border-white/10 dark:bg-[#2C2C2C] min-w-[150px]"
+                    style={{ top: contextMenu.y, left: contextMenu.x }}
+                    onClick={(e) => e.stopPropagation()}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                >
+                    <button
+                        className={`w-full text-left rounded-sm px-2 py-1.5 ${!selectedNodeId || selectedNodeId === "page" ? "text-neutral-400 cursor-not-allowed" : "text-foreground hover:bg-neutral-100 dark:hover:bg-white/5"}`}
+                        disabled={!selectedNodeId || selectedNodeId === "page"}
+                        onClick={() => {
+                            setContextMenu(null);
+                            copySelected();
+                        }}
+                    >
+                        Copy
+                    </button>
+                    <button
+                        className={`w-full text-left rounded-sm px-2 py-1.5 ${!selectedNodeId || selectedNodeId === "page" ? "text-neutral-400 cursor-not-allowed" : "text-foreground hover:bg-neutral-100 dark:hover:bg-white/5"}`}
+                        disabled={!selectedNodeId || selectedNodeId === "page"}
+                        onClick={() => {
+                            setContextMenu(null);
+                            duplicateSelected();
+                        }}
+                    >
+                        Duplicate
+                    </button>
+                    <button
+                        className={`w-full text-left rounded-sm px-2 py-1.5 ${!copiedNode || !copiedNode.objects.length ? "text-neutral-400 cursor-not-allowed" : "text-foreground hover:bg-neutral-100 dark:hover:bg-white/5"}`}
+                        disabled={!copiedNode || !copiedNode.objects.length}
+                        onClick={() => {
+                            setContextMenu(null);
+                            void pasteCopied();
+                        }}
+                    >
+                        Paste
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

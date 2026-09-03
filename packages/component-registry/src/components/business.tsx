@@ -46,6 +46,8 @@ export const StatsCounterComponent: ComponentDefinition<{
       className={className}
       style={{
         ...style,
+        width: "100%",
+        boxSizing: "border-box",
         display: "grid",
         gridTemplateColumns: breakpoint === "mobile" ? "1fr" : `repeat(${props.stats.length}, 1fr)`,
         gap: 16,
@@ -90,6 +92,8 @@ export const TeamGridComponent: ComponentDefinition<{
       className={className}
       style={{
         ...style,
+        width: "100%",
+        boxSizing: "border-box",
         display: "grid",
         gridTemplateColumns: breakpoint === "mobile" ? "1fr" : "repeat(3, 1fr)",
         gap: 24,

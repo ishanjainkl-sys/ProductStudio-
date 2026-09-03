@@ -1,0 +1,920 @@
+﻿diff --git a/apps/api/src/middleware/errorHandler.ts b/apps/api/src/middleware/errorHandler.ts
+index 7555167..c906d03 100644
+--- a/apps/api/src/middleware/errorHandler.ts
++++ b/apps/api/src/middleware/errorHandler.ts
+@@ -30,6 +30,7 @@ export function errorHandler(
+     return;
+   }
+ 
++  import("fs").then(fs => fs.appendFileSync("error.log", "\n" + new Date().toISOString() + "\n" + (err instanceof Error ? err.stack : String(err)) + "\n"));
+   console.error(err);
+   res.status(500).json({
+     error: {
+diff --git a/apps/api/src/modules/pages/pages.service.ts b/apps/api/src/modules/pages/pages.service.ts
+index 5191a49..2aaa447 100644
+--- a/apps/api/src/modules/pages/pages.service.ts
++++ b/apps/api/src/modules/pages/pages.service.ts
+@@ -91,7 +91,7 @@ export async function createPage(projectId: string, userId: string, input: Creat
+       slug,
+       isHome: false,
+       sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
+-      contentJson: content,
++      contentJson: JSON.parse(JSON.stringify(content)),
+       seoTitle: input.name,
+       version: 1,
+     },
+@@ -201,7 +201,7 @@ export async function savePage(
+     await tx.page.update({
+       where: { id: pageId },
+       data: {
+-        contentJson: nextDoc,
++        contentJson: JSON.parse(JSON.stringify(nextDoc)),
+         version: nextVersion,
+         updatedAt: savedAt,
+         seoTitle: nextDoc.seo.title ?? page.seoTitle,
+@@ -231,7 +231,7 @@ export async function duplicatePage(pageId: string, userId: string) {
+   let i = 2;
+   while (
+     await prisma.page.findFirst({
+-      where: { projectId: page.projectId, slug, deletedAt: null },
++      where: { projectId: page.projectId, slug },
+     })
+   ) {
+     slug = `${baseSlug}-${i++}`;
+@@ -251,6 +251,8 @@ export async function duplicatePage(pageId: string, userId: string) {
+     },
+   });
+ 
++  const parsedDoc = pageDocumentSchema.parse(doc);
++
+   const maxOrder = await prisma.page.aggregate({
+     where: { projectId: page.projectId, deletedAt: null },
+     _max: { sortOrder: true },
+@@ -264,9 +266,9 @@ export async function duplicatePage(pageId: string, userId: string) {
+       slug,
+       isHome: false,
+       sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
+-      contentJson: doc,
+-      seoTitle: doc.seo.title ?? `${page.name} Copy`,
+-      seoDescription: doc.seo.description ?? "",
++      contentJson: JSON.parse(JSON.stringify(parsedDoc)),
++      seoTitle: parsedDoc.seo.title ?? `${page.name} Copy`,
++      seoDescription: parsedDoc.seo.description ?? "",
+       version: 1,
+     },
+   });
+diff --git a/apps/web/src/app/layout.tsx b/apps/web/src/app/layout.tsx
+index e2f3597..62bc312 100644
+--- a/apps/web/src/app/layout.tsx
++++ b/apps/web/src/app/layout.tsx
+@@ -10,7 +10,7 @@ export const metadata: Metadata = {
+ 
+ export default function RootLayout({ children }: { children: React.ReactNode }) {
+   return (
+-    <html lang="en" suppressHydrationWarning>
++    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+       <head>
+         <link rel="preconnect" href="https://fonts.googleapis.com" />
+         <link
+diff --git a/apps/web/src/features/builder/BuilderShell.tsx b/apps/web/src/features/builder/BuilderShell.tsx
+index c95884d..0a5b44b 100644
+--- a/apps/web/src/features/builder/BuilderShell.tsx
++++ b/apps/web/src/features/builder/BuilderShell.tsx
+@@ -57,6 +57,8 @@ export function BuilderShell({
+   const move = useBuilderStore((s) => s.move);
+   const removeSelected = useBuilderStore((s) => s.removeSelected);
+   const duplicateSelected = useBuilderStore((s) => s.duplicateSelected);
++  const copySelected = useBuilderStore((s) => s.copySelected);
++  const pasteCopied = useBuilderStore((s) => s.pasteCopied);
+   const [ready, setReady] = useState(false);
+   const [exportOpen, setExportOpen] = useState(false);
+   const [aiOpen, setAiOpen] = useState(false);
+@@ -115,6 +117,18 @@ export function BuilderShell({
+         e.preventDefault();
+         duplicateSelected();
+       }
++      if (meta && e.key === "c") {
++        const tag = (e.target as HTMLElement).tagName;
++        if (tag === "INPUT" || tag === "TEXTAREA") return;
++        e.preventDefault();
++        copySelected();
++      }
++      if (meta && e.key === "v") {
++        const tag = (e.target as HTMLElement).tagName;
++        if (tag === "INPUT" || tag === "TEXTAREA") return;
++        e.preventDefault();
++        void pasteCopied();
++      }
+       if (e.key === "Delete" || e.key === "Backspace") {
+         const tag = (e.target as HTMLElement).tagName;
+         if (tag === "INPUT" || tag === "TEXTAREA") return;
+@@ -122,9 +136,23 @@ export function BuilderShell({
+         removeSelected();
+       }
+     }
++
++    function onPageDuplicated(e: Event) {
++      const customEvent = e as CustomEvent;
++      const { newPageId, projectId } = customEvent.detail;
++      if (newPageId && projectId) {
++        router.push(`/projects/${projectId}/pages/${newPageId}`);
++        setLeftTab("pages");
++      }
++    }
++
+     window.addEventListener("keydown", onKey);
+-    return () => window.removeEventListener("keydown", onKey);
+-  }, [undo, redo, save, duplicateSelected, removeSelected]);
++    window.addEventListener("ps-page-duplicated", onPageDuplicated);
++    return () => {
++      window.removeEventListener("keydown", onKey);
++      window.removeEventListener("ps-page-duplicated", onPageDuplicated);
++    };
++  }, [undo, redo, save, duplicateSelected, copySelected, pasteCopied, removeSelected, router, setLeftTab]);
+ 
+   function onDragEnd(event: DragEndEvent) {
+     const { active, over } = event;
+diff --git a/apps/web/src/features/builder/canvas/Canvas.tsx b/apps/web/src/features/builder/canvas/Canvas.tsx
+index e862af5..875c74e 100644
+--- a/apps/web/src/features/builder/canvas/Canvas.tsx
++++ b/apps/web/src/features/builder/canvas/Canvas.tsx
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useRef, useEffect, useCallback } from "react";
++import { useRef, useEffect, useCallback, useState } from "react";
+ import { BREAKPOINT_WIDTHS } from "@productstudio/shared-types";
+ import { useBuilderStore } from "../state/builder-store";
+ import { PageFrame } from "./PageFrame";
+@@ -13,6 +13,11 @@ export function Canvas() {
+     const breakpoint = useBuilderStore((s) => s.activeBreakpoint);
+     const selectNode = useBuilderStore((s) => s.selectNode);
+     const updateProps = useBuilderStore((s) => s.updateProps);
++    const pasteCopied = useBuilderStore((s) => s.pasteCopied);
++    const copySelected = useBuilderStore((s) => s.copySelected);
++    const duplicateSelected = useBuilderStore((s) => s.duplicateSelected);
++    const copiedNode = useBuilderStore((s) => s.copiedNode);
++    const selectedNodeId = useBuilderStore((s) => s.selectedNodeId);
+ 
+     const zoom = useBuilderStore((s) => s.zoom);
+     const offsetX = useBuilderStore((s) => s.offsetX);
+@@ -23,6 +28,15 @@ export function Canvas() {
+     const isDragging = useRef(false);
+     const lastMousePos = useRef({ x: 0, y: 0 });
+     const isSpaceDown = useRef(false);
++    const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
++
++    useEffect(() => {
++        function handleClick() {
++            setContextMenu(null);
++        }
++        window.addEventListener("click", handleClick);
++        return () => window.removeEventListener("click", handleClick);
++    }, []);
+ 
+     // Initial centering
+     useEffect(() => {
+@@ -277,6 +291,10 @@ export function Canvas() {
+                     selectNode('page');
+                 }
+             }}
++            onContextMenu={(e) => {
++                e.preventDefault();
++                setContextMenu({ x: e.clientX, y: e.clientY });
++            }}
+             id="canvas-viewport"
+         >
+             <div
+@@ -292,6 +310,46 @@ export function Canvas() {
+             </div>
+ 
+             <TeamMemberEditor />
++
++            {contextMenu && (
++                <div
++                    className="fixed z-50 rounded-md bg-white p-1 text-sm shadow-xl border border-neutral-200 dark:border-white/10 dark:bg-[#2C2C2C] min-w-[150px]"
++                    style={{ top: contextMenu.y, left: contextMenu.x }}
++                    onClick={(e) => e.stopPropagation()}
++                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
++                >
++                    <button
++                        className={`w-full text-left rounded-sm px-2 py-1.5 ${!selectedNodeId || selectedNodeId === "page" ? "text-neutral-400 cursor-not-allowed" : "text-foreground hover:bg-neutral-100 dark:hover:bg-white/5"}`}
++                        disabled={!selectedNodeId || selectedNodeId === "page"}
++                        onClick={() => {
++                            setContextMenu(null);
++                            copySelected();
++                        }}
++                    >
++                        Copy
++                    </button>
++                    <button
++                        className={`w-full text-left rounded-sm px-2 py-1.5 ${!selectedNodeId || selectedNodeId === "page" ? "text-neutral-400 cursor-not-allowed" : "text-foreground hover:bg-neutral-100 dark:hover:bg-white/5"}`}
++                        disabled={!selectedNodeId || selectedNodeId === "page"}
++                        onClick={() => {
++                            setContextMenu(null);
++                            duplicateSelected();
++                        }}
++                    >
++                        Duplicate
++                    </button>
++                    <button
++                        className={`w-full text-left rounded-sm px-2 py-1.5 ${!copiedNode || !copiedNode.objects.length ? "text-neutral-400 cursor-not-allowed" : "text-foreground hover:bg-neutral-100 dark:hover:bg-white/5"}`}
++                        disabled={!copiedNode || !copiedNode.objects.length}
++                        onClick={() => {
++                            setContextMenu(null);
++                            void pasteCopied();
++                        }}
++                    >
++                        Paste
++                    </button>
++                </div>
++            )}
+         </div>
+     );
+ }
+diff --git a/apps/web/src/features/builder/canvas/PageFrame.tsx b/apps/web/src/features/builder/canvas/PageFrame.tsx
+index e6884d4..a77d462 100644
+--- a/apps/web/src/features/builder/canvas/PageFrame.tsx
++++ b/apps/web/src/features/builder/canvas/PageFrame.tsx
+@@ -120,8 +120,7 @@ export function PageFrame({
+     return (
+         <div
+             onClick={(e) => {
+-                // Only select the page if they click exactly on the outer container or spacer,
+-                // but `Selectable` stops propagation. 
++                // Only select the page if they click exactly on the outer container or spacer, // but `Selectable` stops propagation. 
+                 // PageRenderer has a root which we'll have wrapped in Selectable. Wait, PageRenderer renders `page.root` directly.
+                 selectNode("page");
+             }}
+@@ -132,19 +131,28 @@ export function PageFrame({
+                 minHeight: `${height}px`,
+             }}
+         >
+-            <PageRenderer
+-                document={page}
+-                breakpoint={breakpoint}
+-                isEditing
+-                theme={theme}
+-                wrapNode={(node, element) => {
+-                    if (node.id === page.root.id) {
+-                        // For the root layout.section, we still wrap with Selectable so we can drag into it!
+-                        return <Selectable node={node}>{element}</Selectable>;
+-                    }
+-                    return <Selectable node={node}>{element}</Selectable>;
+-                }}
+-            />
++            <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
++                <div
++                    style={{
++                        width: `${BREAKPOINT_WIDTHS[breakpoint]}px`,
++                        minHeight: "100%",
++                        position: "relative",
++                    }}
++                >
++                    <PageRenderer
++                        document={page}
++                        breakpoint={breakpoint}
++                        isEditing
++                        theme={theme}
++                        wrapNode={(node, element) => {
++                            if (node.id === page.root.id) {
++                                return <Selectable node={node}>{element}</Selectable>;
++                            }
++                            return <Selectable node={node}>{element}</Selectable>;
++                        }}
++                    />
++                </div>
++            </div>
+ 
+             {isSelected && (
+                 <div
+diff --git a/apps/web/src/features/builder/canvas/Selectable.tsx b/apps/web/src/features/builder/canvas/Selectable.tsx
+index b8f4cb7..5cd0da2 100644
+--- a/apps/web/src/features/builder/canvas/Selectable.tsx
++++ b/apps/web/src/features/builder/canvas/Selectable.tsx
+@@ -27,7 +27,6 @@ export function Selectable({
+   const { setNodeRef: setDropRef, isOver } = useDroppable({
+     id: `drop:${node.id}`,
+     data: { type: "drop-container", nodeId: node.id, acceptsChildren: def.acceptsChildren },
+-    disabled: !def.acceptsChildren,
+   });
+ 
+   const selected = selectedNodeId === node.id;
+diff --git a/apps/web/src/features/builder/component-library-panel/PagesPanel.tsx b/apps/web/src/features/builder/component-library-panel/PagesPanel.tsx
+index 398a7ec..d6632f3 100644
+--- a/apps/web/src/features/builder/component-library-panel/PagesPanel.tsx
++++ b/apps/web/src/features/builder/component-library-panel/PagesPanel.tsx
+@@ -15,6 +15,38 @@ export function PagesPanel({ projectId, pageId }: { projectId: string; pageId: s
+   const router = useRouter();
+   const [pages, setPages] = useState<PageRow[]>([]);
+   const [name, setName] = useState("");
++  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, page: PageRow } | null>(null);
++
++  useEffect(() => {
++    function handleClick() {
++      setContextMenu(null);
++    }
++    window.addEventListener("click", handleClick);
++    return () => window.removeEventListener("click", handleClick);
++  }, []);
++
++  async function handleDelete(p: PageRow) {
++    if (p.isHome) {
++      alert("Cannot delete the home page.");
++      return;
++    }
++    if (!confirm(`Are you sure you want to delete the page "${p.name}"?`)) return;
++
++    try {
++      await api.delete(`/api/pages/${p.id}`);
++      const newPages = await api.get<PageRow[]>(`/api/projects/${projectId}/pages`);
++      setPages(newPages);
++      if (p.id === pageId) {
++        const homePage = newPages.find((x) => x.isHome) || newPages[0];
++        if (homePage) {
++          router.push(`/projects/${projectId}/pages/${homePage.id}`);
++        }
++      }
++    } catch (err) {
++      console.error("Failed to delete page:", err);
++      alert("Failed to delete page. Please try again.");
++    }
++  }
+ 
+   async function reload() {
+     const data = await api.get<PageRow[]>(`/api/projects/${projectId}/pages`);
+@@ -35,34 +67,59 @@ export function PagesPanel({ projectId, pageId }: { projectId: string; pageId: s
+   }
+ 
+   return (
+-    <div className="flex h-full flex-col p-3">
+-      <ul className="flex-1 space-y-1 overflow-auto">
+-        {pages.map((p) => (
+-          <li key={p.id}>
+-            <button
+-              className={`w-full rounded-md px-3 py-2 text-left text-sm ${p.id === pageId ? "bg-primary-50 text-primary-900" : "hover:bg-neutral-100"}`}
+-              onClick={() => router.push(`/projects/${projectId}/pages/${p.id}`)}
+-            >
+-              {p.name}
+-              {p.isHome ? <span className="ml-2 text-[10px] text-neutral-500">HOME</span> : null}
+-            </button>
+-          </li>
+-        ))}
+-      </ul>
+-      <div className="mt-3 space-y-2 border-t border-neutral-100 pt-3">
+-        <input
+-          value={name}
+-          onChange={(e) => setName(e.target.value)}
+-          placeholder="New page name"
+-          className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+-        />
+-        <button
+-          onClick={() => void addPage()}
+-          className="w-full rounded-md bg-neutral-900 px-2 py-1.5 text-sm text-white"
+-        >
+-          Add page
+-        </button>
++    <>
++      <div className="flex h-full flex-col p-3 relative">
++        <ul className="flex-1 space-y-1 overflow-auto">
++          {pages.map((p) => (
++            <li key={p.id}>
++              <button
++                className={`w-full rounded-md px-3 py-2 text-left text-sm ${p.id === pageId ? "bg-primary-50 text-primary-900" : "hover:bg-neutral-100 dark:hover:bg-white/5"}`}
++                onClick={() => router.push(`/projects/${projectId}/pages/${p.id}`)}
++                onContextMenu={(e) => {
++                  e.preventDefault();
++                  setContextMenu({ x: e.clientX, y: e.clientY, page: p });
++                }}
++              >
++                {p.name}
++                {p.isHome ? <span className="ml-2 text-[10px] text-neutral-500">HOME</span> : null}
++              </button>
++            </li>
++          ))}
++        </ul>
++        <div className="mt-3 space-y-2 border-t border-neutral-100 pt-3">
++          <input
++            value={name}
++            onChange={(e) => setName(e.target.value)}
++            placeholder="New page name"
++            className="w-full rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
++          />
++          <button
++            onClick={() => void addPage()}
++            className="w-full rounded-md bg-neutral-900 px-2 py-1.5 text-sm text-white"
++          >
++            Add page
++          </button>
++        </div>
+       </div>
+-    </div>
++
++      {contextMenu && (
++        <div
++          className="fixed z-50 rounded-md bg-white p-1 text-sm shadow-xl border border-neutral-200 dark:border-white/10 dark:bg-[#2C2C2C] min-w-[150px]"
++          style={{ top: contextMenu.y, left: contextMenu.x }}
++          onClick={(e) => e.stopPropagation()}
++        >
++          <button
++            className={`w-full text-left rounded-sm px-2 py-1.5 ${contextMenu.page.isHome ? "text-neutral-400 cursor-not-allowed" : "text-red-600 hover:bg-neutral-100 dark:hover:bg-white/5"}`}
++            disabled={contextMenu.page.isHome}
++            onClick={() => {
++              setContextMenu(null);
++              void handleDelete(contextMenu.page);
++            }}
++          >
++            Delete Page
++          </button>
++        </div>
++      )}
++    </>
+   );
+ }
+diff --git a/apps/web/src/features/builder/state/builder-store.ts b/apps/web/src/features/builder/state/builder-store.ts
+index 46aede6..553ffa0 100644
+--- a/apps/web/src/features/builder/state/builder-store.ts
++++ b/apps/web/src/features/builder/state/builder-store.ts
+@@ -16,6 +16,7 @@ import {
+   moveNode,
+   updateNodeProps,
+   resetNodeProp,
++  pasteNode,
+ } from "@productstudio/json-engine";
+ import { instantiateComponent } from "@productstudio/component-registry";
+ import { api, ApiClientError } from "@/lib/api-client";
+@@ -32,6 +33,7 @@ interface BuilderStore {
+   activeBreakpoint: Breakpoint;
+   undoStack: PageDocument[];
+   redoStack: PageDocument[];
++  copiedNode: { objects: ComponentNode[]; sourcePageId: string } | null;
+   saveStatus: SaveStatus;
+   lastSavedAt: string | null;
+   expectedVersion: number;
+@@ -64,6 +66,8 @@ interface BuilderStore {
+   resetResponsiveProp: (nodeId: string, key: string) => void;
+   removeSelected: () => void;
+   duplicateSelected: () => void;
++  copySelected: () => void;
++  pasteCopied: () => void;
+   undo: () => void;
+   redo: () => void;
+   save: (manual?: boolean) => Promise<void>;
+@@ -92,6 +96,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
+   activeBreakpoint: "desktop",
+   undoStack: [],
+   redoStack: [],
++  copiedNode: null,
+   saveStatus: "saved",
+   lastSavedAt: null,
+   expectedVersion: 1,
+@@ -195,7 +200,67 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
+   duplicateSelected: () => {
+     const { page, selectedNodeId, commit } = get();
+     if (!page || !selectedNodeId || selectedNodeId === page.root.id) return;
+-    commit(duplicateNode(page, selectedNodeId));
++    try {
++      const nextDoc = duplicateNode(page, selectedNodeId);
++      commit(nextDoc);
++
++      const parentInNext = findParentLocal(nextDoc.root, selectedNodeId);
++      if (parentInNext && parentInNext.parent.children) {
++        const duplicated = parentInNext.parent.children[parentInNext.index + 1];
++        if (duplicated) set({ selectedNodeId: duplicated.id });
++      }
++    } catch (e) {
++      /* ignore */
++    }
++  },
++
++  copySelected: () => {
++    const { page, selectedNodeId } = get();
++    if (!page || !selectedNodeId) return;
++
++    // Always use the object/component data; do not duplicate pages natively
++    if (selectedNodeId === "page" || selectedNodeId === page.root.id) {
++      // Typically, we don't want to copy the entire page root as a duplicate. But if we do, 
++      // format it into the clipboard payload to be pasted on a page context.
++      set({ copiedNode: { objects: [page.root], sourcePageId: page.pageId } });
++      return;
++    }
++
++    const node = findNodeLocal(page.root, selectedNodeId);
++    if (node) {
++      set({ copiedNode: { objects: [node], sourcePageId: page.pageId } });
++    }
++  },
++
++  pasteCopied: async () => {
++    const { page, selectedNodeId, copiedNode, commit } = get();
++    if (!page || !copiedNode || !copiedNode.objects.length) return;
++
++    // Paste operation must always use the currently active page/canvas
++    const sourceNode = copiedNode.objects[0];
++    if (!sourceNode) return;
++
++    const targetId = (selectedNodeId && selectedNodeId !== "page") ? selectedNodeId : page.root.id;
++    try {
++      const nextDoc = pasteNode(page, targetId, sourceNode);
++      commit(nextDoc);
++
++      const targetInNext = findNodeLocal(nextDoc.root, targetId);
++      if (targetInNext) {
++        if (targetInNext.children && targetInNext.children.length > 0) {
++          const pasted = targetInNext.children[targetInNext.children.length - 1];
++          if (pasted) set({ selectedNodeId: pasted.id });
++        } else {
++          const parentInNext = findParentLocal(nextDoc.root, targetId);
++          if (parentInNext && parentInNext.parent.children) {
++            const pasted = parentInNext.parent.children[parentInNext.index + 1];
++            if (pasted) set({ selectedNodeId: pasted.id });
++          }
++        }
++      }
++    } catch (err) {
++      console.error("Failed to paste node:", err);
++    }
+   },
+ 
+   undo: () => {
+@@ -275,3 +340,14 @@ function findNodeLocal(root: ComponentNode, id: string): ComponentNode | null {
+   }
+   return null;
+ }
++
++function findParentLocal(root: ComponentNode, id: string): { parent: ComponentNode; index: number } | null {
++  const children = root.children ?? [];
++  for (let i = 0; i < children.length; i++) {
++    const child = children[i]!;
++    if (child.id === id) return { parent: root, index: i };
++    const nested = findParentLocal(child, id);
++    if (nested) return nested;
++  }
++  return null;
++}
+diff --git a/apps/web/src/features/dashboard/PreviewCard.tsx b/apps/web/src/features/dashboard/PreviewCard.tsx
+index 9ff566d..1ee8535 100644
+--- a/apps/web/src/features/dashboard/PreviewCard.tsx
++++ b/apps/web/src/features/dashboard/PreviewCard.tsx
+@@ -45,7 +45,7 @@ export function PreviewCard({
+         aspect-[16/9]
+         w-full
+         overflow-hidden
+-        rounded-t-[24px]
++        rounded-t-lg
+         border-b border-neutral-100
+         bg-neutral-100
+         dark:border-neutral-800
+@@ -54,27 +54,10 @@ export function PreviewCard({
+       "
+             onClick={onClick}
+         >
+-            {/* macOS window bar */}
+-            <div
+-                className="
+-          absolute inset-x-0 top-0 z-30
+-          h-7
+-          flex items-center gap-1.5
+-          px-3
+-          border-b border-black/5
+-          bg-black/5
+-          backdrop-blur-sm
+-          dark:border-white/5
+-          dark:bg-white/5
+-        "
+-            >
+-                <span className="h-2 w-2 rounded-full bg-red-400 dark:bg-red-500/80" />
+-                <span className="h-2 w-2 rounded-full bg-amber-400 dark:bg-amber-500/80" />
+-                <span className="h-2 w-2 rounded-full bg-emerald-400 dark:bg-emerald-500/80" />
+-            </div>
++
+ 
+             {/* Preview viewport */}
+-            <div className="absolute inset-x-0 bottom-0 top-7 overflow-hidden">
++            <div className="absolute inset-0 overflow-hidden">
+                 {homePageContent ? (
+                     <div
+                         className="
+diff --git a/apps/web/src/features/dashboard/ProjectsView.tsx b/apps/web/src/features/dashboard/ProjectsView.tsx
+index dd321ae..9711109 100644
+--- a/apps/web/src/features/dashboard/ProjectsView.tsx
++++ b/apps/web/src/features/dashboard/ProjectsView.tsx
+@@ -220,7 +220,7 @@ export function ProjectsView() {
+               Projects
+             </h1>
+           </div>
+-          <Button onClick={() => void openModal()} size="sm" className="shrink-0 w-full sm:w-auto h-8 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-none transition-transform active:scale-95 text-[13px] font-medium">
++          <Button onClick={() => void openModal()} size="sm" className="shrink-0 w-full sm:w-auto h-7 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-none transition-transform active:scale-95 text-[12px] font-medium">
+             <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
+             New Project
+           </Button>
+@@ -233,8 +233,7 @@ export function ProjectsView() {
+               <Input
+                 value={query}
+                 onChange={(e) => setQuery(e.target.value)}
+-                placeholder="Search projects..."
+-                className="pl-[30px] pr-8 rounded-md h-8 text-[13px] border-neutral-200/80 bg-white dark:bg-[#1A1A1A] dark:border-[#2C2C2C] shadow-none focus-visible:ring-1 focus-visible:ring-blue-500/50"
++                className="pl-8 pr-8 rounded-md h-7 text-[12px] border-neutral-200/80 bg-white dark:bg-[#1A1A1A] dark:border-[#2C2C2C] shadow-none focus-visible:ring-1 focus-visible:ring-blue-500/50"
+               />
+               {query && (
+                 <button
+@@ -248,7 +247,7 @@ export function ProjectsView() {
+             <select
+               value={sortBy}
+               onChange={(e) => setSortBy(e.target.value as any)}
+-              className="h-8 w-full sm:w-auto overflow-hidden rounded-md border border-neutral-200/80 bg-white px-2.5 text-[13px] font-medium text-foreground shadow-none outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 dark:bg-[#1A1A1A] dark:border-[#2C2C2C]"
++              className="h-7 w-full sm:w-auto overflow-hidden rounded-md border border-neutral-200/80 bg-white px-2.5 text-[12px] font-medium text-foreground shadow-none outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 dark:bg-[#1A1A1A] dark:border-[#2C2C2C]"
+             >
+               <option value="updatedDesc">Recently Updated</option>
+               <option value="newest">Recently Created</option>
+@@ -288,7 +287,7 @@ export function ProjectsView() {
+                 initial={{ opacity: 0, y: 16 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 transition={{ duration: 0.35, delay: index * 0.05 }}
+-                className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-neutral-200/60 bg-white shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-[#2C2C2C] dark:bg-[#1E1E1E] hover:-translate-y-1"
++                className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-neutral-200/60 bg-white shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-[#2C2C2C] dark:bg-[#1E1E1E] hover:-translate-y-1"
+               >
+                 {/* Advanced Aspect Ratio Preview */}
+                 <PreviewCard
+@@ -306,7 +305,7 @@ export function ProjectsView() {
+                   }}
+                 />
+ 
+-                <div className="flex flex-col flex-1 p-5">
++                <div className="flex flex-col flex-1 p-3">
+                   <div className="flex items-start justify-between gap-3">
+                     <div className="flex flex-col flex-1 min-w-0">
+                       <div className="flex items-center gap-2 mb-1.5">
+@@ -314,7 +313,7 @@ export function ProjectsView() {
+                           Web App
+                         </span>
+                       </div>
+-                      <h2 className="text-[14px] font-medium tracking-tight text-foreground transition-colors group-hover:text-blue-500 truncate mt-1">
++                      <h2 className="text-[13px] font-medium tracking-tight text-foreground transition-colors group-hover:text-blue-500 truncate mt-1">
+                         {p.name}
+                       </h2>
+                     </div>
+diff --git a/apps/web/src/features/dashboard/TemplatesView.tsx b/apps/web/src/features/dashboard/TemplatesView.tsx
+index e77de1f..f98c07c 100644
+--- a/apps/web/src/features/dashboard/TemplatesView.tsx
++++ b/apps/web/src/features/dashboard/TemplatesView.tsx
+@@ -126,7 +126,7 @@ export function TemplatesView() {
+                 placeholder="Search templates..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+-                className="w-full rounded-md border border-neutral-200/80 bg-transparent pl-[30px] pr-8 h-8 text-[13px] font-medium text-foreground shadow-none outline-none transition-all placeholder:text-neutral-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800  dark:focus:border-primary-500"
++                className="w-full rounded-md border border-neutral-200/80 bg-transparent pl-8 pr-8 h-7 text-[12px] font-medium text-foreground shadow-none outline-none transition-all placeholder:text-neutral-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800  dark:focus:border-primary-500"
+               />
+               {searchQuery && (
+                 <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+@@ -137,7 +137,7 @@ export function TemplatesView() {
+             <select
+               value={sortBy}
+               onChange={(e) => setSortBy(e.target.value as SortOption)}
+-              className="w-full sm:w-auto h-8 overflow-hidden rounded-md border border-neutral-200/80 bg-transparent px-2.5 text-[13px] font-medium text-foreground shadow-none outline-none transition-all focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800 "
++              className="w-full sm:w-auto h-7 overflow-hidden rounded-md border border-neutral-200/80 bg-transparent px-2.5 text-[12px] font-medium text-foreground shadow-none outline-none transition-all focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800 "
+             >
+               <option value="newest">Recently Created</option>
+               <option value="nameAsc">Name AΓÇôZ</option>
+@@ -187,7 +187,7 @@ export function TemplatesView() {
+           {filteredTemplates.map((template, index) => (
+             <li
+               key={template.id}
+-              className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-neutral-200/60 bg-card shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-neutral-700/60 hover:-translate-y-1"
++              className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-neutral-200/60 bg-card shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-neutral-700/60 hover:-translate-y-1"
+             >
+               {/* Clean Thumbnail Area */}
+               <PreviewCard
+@@ -200,10 +200,10 @@ export function TemplatesView() {
+                 }}
+               />
+ 
+-              <div className="flex flex-1 flex-col p-5 pb-4">
++              <div className="flex flex-1 flex-col p-3 pb-2">
+                 <div className="mb-3 flex-1 flex flex-col">
+                   <div className="mb-2 flex items-center justify-between gap-3 leading-none">
+-                    <h2 className="truncate text-[13px] font-medium text-foreground group-hover:text-primary-700 transition-colors dark:group-hover:text-primary-400">
++                    <h2 className="truncate text-[12px] font-medium text-foreground group-hover:text-primary-700 transition-colors dark:group-hover:text-primary-400">
+                       {template.name}
+                     </h2>
+                     {template.latestVersionNumber ? (
+diff --git a/packages/component-registry/src/components/business.tsx b/packages/component-registry/src/components/business.tsx
+index d65c5cd..255a12d 100644
+--- a/packages/component-registry/src/components/business.tsx
++++ b/packages/component-registry/src/components/business.tsx
+@@ -46,6 +46,8 @@ export const StatsCounterComponent: ComponentDefinition<{
+       className={className}
+       style={{
+         ...style,
++        width: "100%",
++        boxSizing: "border-box",
+         display: "grid",
+         gridTemplateColumns: breakpoint === "mobile" ? "1fr" : `repeat(${props.stats.length}, 1fr)`,
+         gap: 16,
+@@ -90,6 +92,8 @@ export const TeamGridComponent: ComponentDefinition<{
+       className={className}
+       style={{
+         ...style,
++        width: "100%",
++        boxSizing: "border-box",
+         display: "grid",
+         gridTemplateColumns: breakpoint === "mobile" ? "1fr" : "repeat(3, 1fr)",
+         gap: 24,
+diff --git a/packages/component-registry/src/components/forms.tsx b/packages/component-registry/src/components/forms.tsx
+index e7b0668..2fba295 100644
+--- a/packages/component-registry/src/components/forms.tsx
++++ b/packages/component-registry/src/components/forms.tsx
+@@ -26,7 +26,7 @@ export const TextInputComponent: ComponentDefinition<{
+     name: z.string(),
+   }),
+   render: ({ props, className, style }) => (
+-    <label className={className} style={{ ...style, display: "block" }}>
++    <label className={className} style={{ ...style, width: "100%", boxSizing: "border-box", display: "block" }}>
+       <span style={{ display: "block", marginBottom: 6, fontWeight: 500 }}>
+         {props.label}
+         {props.required ? " *" : ""}
+@@ -38,6 +38,7 @@ export const TextInputComponent: ComponentDefinition<{
+         required={props.required}
+         style={{
+           width: "100%",
++          boxSizing: "border-box",
+           padding: "10px 12px",
+           border: "1px solid #d1d5db",
+           borderRadius: 8,
+@@ -68,7 +69,7 @@ export const FormContainerComponent: ComponentDefinition<{
+   render: ({ props, children, className, style, isEditing }) => (
+     <form
+       className={className}
+-      style={{ ...style, display: "flex", flexDirection: "column", gap: 16 }}
++      style={{ ...style, width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 16 }}
+       action={isEditing ? undefined : props.action}
+       method={props.method}
+       onSubmit={isEditing ? (e) => e.preventDefault() : undefined}
+diff --git a/packages/component-registry/src/components/layout.tsx b/packages/component-registry/src/components/layout.tsx
+index b2c353f..f10704e 100644
+--- a/packages/component-registry/src/components/layout.tsx
++++ b/packages/component-registry/src/components/layout.tsx
+@@ -44,7 +44,7 @@ export const SectionComponent: ComponentDefinition<{
+     backgroundColor: (v) => ({ "background-color": String(v) }),
+   },
+   render: ({ props, children, className, style }) => (
+-    <section className={className} style={{ ...style, width: "100%" }}>
++    <section className={className} style={{ ...style, width: "100%", boxSizing: "border-box" }}>
+       <div style={{ maxWidth: props.maxWidth, margin: "0 auto" }}>{children}</div>
+     </section>
+   ),
+@@ -73,7 +73,7 @@ export const ContainerComponent: ComponentDefinition<{
+     backgroundColor: (v) => ({ "background-color": String(v) }),
+   },
+   render: ({ children, className, style }) => (
+-    <div className={className} style={style}>
++    <div className={className} style={{ ...style, width: "100%", boxSizing: "border-box" }}>
+       {children}
+     </div>
+   ),
+@@ -110,7 +110,7 @@ export const StackComponent: ComponentDefinition<{
+     padding: (v) => pad(v),
+   },
+   render: ({ children, className, style }) => (
+-    <div className={className} style={{ ...style, display: "flex" }}>
++    <div className={className} style={{ ...style, width: "100%", boxSizing: "border-box", display: "flex" }}>
+       {children}
+     </div>
+   ),
+@@ -150,6 +150,8 @@ export const GridComponent: ComponentDefinition<{
+       className={className}
+       style={{
+         ...style,
++        width: "100%",
++        boxSizing: "border-box",
+         display: "grid",
+         gridTemplateColumns: `repeat(${props.columns}, minmax(0, 1fr))`,
+       }}
+diff --git a/packages/component-registry/src/components/marketing.tsx b/packages/component-registry/src/components/marketing.tsx
+index ad7363e..a3c9389 100644
+--- a/packages/component-registry/src/components/marketing.tsx
++++ b/packages/component-registry/src/components/marketing.tsx
+@@ -71,6 +71,8 @@ export const HeroComponent: ComponentDefinition<HeroProps> = {
+         className={className}
+         style={{
+           ...style,
++          width: "100%",
++          boxSizing: "border-box",
+           backgroundColor: props.backgroundImage ? undefined : "#0f1f4d",
+           color: "#ffffff",
+         }}
+@@ -134,7 +136,7 @@ export const CtaBannerComponent: ComponentDefinition<{
+     backgroundColor: (v) => ({ "background-color": String(v) }),
+   },
+   render: ({ props, className, style, isEditing }) => (
+-    <aside className={className} style={{ ...style, textAlign: "center" }}>
++    <aside className={className} style={{ ...style, width: "100%", boxSizing: "border-box", textAlign: "center" }}>
+       <h2 style={{ margin: "0 0 8px" }}>{props.heading}</h2>
+       <p style={{ margin: "0 0 16px", color: "#6b7280" }}>{props.body}</p>
+       <a
+@@ -182,7 +184,7 @@ export const TestimonialComponent: ComponentDefinition<{
+   }),
+   styleMap: { padding: (v) => pad(v) },
+   render: ({ props, className, style }) => (
+-    <blockquote className={className} style={{ ...style, margin: 0, borderLeft: "4px solid #3b6ff0" }}>
++    <blockquote className={className} style={{ ...style, width: "100%", boxSizing: "border-box", margin: 0, borderLeft: "4px solid #3b6ff0" }}>
+       <p style={{ fontSize: 18, margin: "0 0 12px" }}>&ldquo;{props.quote}&rdquo;</p>
+       <footer style={{ color: "#6b7280", fontSize: 14 }}>
+         <strong style={{ color: "#111318" }}>{props.author}</strong> ΓÇö {props.role}
+@@ -221,7 +223,7 @@ export const FeatureGridComponent: ComponentDefinition<{
+   }),
+   styleMap: { padding: (v) => pad(v) },
+   render: ({ props, className, style, breakpoint }) => (
+-    <section className={className} style={{ ...style, color: "#111318" }}>
++    <section className={className} style={{ ...style, width: "100%", boxSizing: "border-box", color: "#111318" }}>
+       <h2 style={{ margin: "0 0 24px", color: "#111318" }}>{props.title}</h2>
+       <div
+         style={{
+diff --git a/packages/component-registry/src/components/navigation.tsx b/packages/component-registry/src/components/navigation.tsx
+index 95c98ac..9372a65 100644
+--- a/packages/component-registry/src/components/navigation.tsx
++++ b/packages/component-registry/src/components/navigation.tsx
+@@ -34,6 +34,8 @@ export const NavbarComponent: ComponentDefinition<{
+       className={className}
+       style={{
+         ...style,
++        width: "100%",
++        boxSizing: "border-box",
+         display: "flex",
+         alignItems: "center",
+         justifyContent: "space-between",
+@@ -86,6 +88,8 @@ export const FooterComponent: ComponentDefinition<{
+       className={className}
+       style={{
+         ...style,
++        width: "100%",
++        boxSizing: "border-box",
+         padding: "32px 24px",
+         borderTop: "1px solid #e5e7eb",
+         display: "flex",
+diff --git a/packages/json-engine/src/mutations.ts b/packages/json-engine/src/mutations.ts
+index 160661f..8e93363 100644
+--- a/packages/json-engine/src/mutations.ts
++++ b/packages/json-engine/src/mutations.ts
+@@ -168,17 +168,42 @@ export function duplicateNode(doc: PageDocument, nodeId: NodeId): PageDocument {
+   const location = findParent(doc.root, nodeId);
+   if (!location) throw new Error(`Node not found: ${nodeId}`);
+   const source = location.parent.children![location.index]!;
++
+   const idMap = new Map<string, string>();
+   let clone = regenerateIds(source, idMap);
+-  clone = {
+-    ...clone,
+-    props: remapRefs(clone.props, idMap) as Record<string, unknown>,
+-    responsiveProps: remapRefs(clone.responsiveProps, idMap) as ComponentNode["responsiveProps"],
+-  };
++  clone = mapTree(clone, (n) => ({
++    ...n,
++    props: remapRefs(n.props, idMap) as Record<string, unknown>,
++    responsiveProps: remapRefs(n.responsiveProps, idMap) as ComponentNode["responsiveProps"],
++  }));
+ 
+   return insertNode(doc, location.parent.id, location.index + 1, clone);
+ }
+ 
++export function pasteNode(doc: PageDocument, targetId: NodeId, sourceNode: ComponentNode): PageDocument {
++  const target = findNode(doc.root, targetId);
++  if (!target) throw new Error(`Target not found: ${targetId}`);
++
++  const idMap = new Map<string, string>();
++  let clone = regenerateIds(sourceNode, idMap);
++  clone = mapTree(clone, (n) => ({
++    ...n,
++    props: remapRefs(n.props, idMap) as Record<string, unknown>,
++    responsiveProps: remapRefs(n.responsiveProps, idMap) as ComponentNode["responsiveProps"],
++  }));
++
++  if (target.children) {
++    // If target is a container, paste inside at the end
++    return insertNode(doc, target.id, target.children.length, clone);
++  } else {
++    // If target is not a container, paste as a sibling after target
++    if (target.id === doc.root.id) throw new Error("Cannot paste as sibling of root");
++    const location = findParent(doc.root, target.id);
++    if (!location) throw new Error(`Target location not found: ${target.id}`);
++    return insertNode(doc, location.parent.id, location.index + 1, clone);
++  }
++}
++
+ export function cloneDocumentWithNewIds(doc: PageDocument): {
+   doc: PageDocument;
+   idMap: Map<string, string>;
+@@ -218,6 +243,7 @@ export interface JsonEngine {
+   updateNodeProps: typeof updateNodeProps;
+   deleteNode: typeof deleteNode;
+   duplicateNode: typeof duplicateNode;
++  pasteNode: typeof pasteNode;
+ }
+ 
+ export const jsonEngine: JsonEngine = {
+@@ -226,4 +252,5 @@ export const jsonEngine: JsonEngine = {
+   updateNodeProps,
+   deleteNode,
+   duplicateNode,
++  pasteNode,
+ };

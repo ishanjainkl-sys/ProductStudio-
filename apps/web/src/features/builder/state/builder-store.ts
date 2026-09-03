@@ -16,6 +16,7 @@ import {
   moveNode,
   updateNodeProps,
   resetNodeProp,
+  pasteNode,
 } from "@productstudio/json-engine";
 import { instantiateComponent } from "@productstudio/component-registry";
 import { api, ApiClientError } from "@/lib/api-client";
@@ -32,6 +33,7 @@ interface BuilderStore {
   activeBreakpoint: Breakpoint;
   undoStack: PageDocument[];
   redoStack: PageDocument[];
+  copiedNode: { objects: ComponentNode[]; sourcePageId: string } | null;
   saveStatus: SaveStatus;
   lastSavedAt: string | null;
   expectedVersion: number;
@@ -64,6 +66,8 @@ interface BuilderStore {
   resetResponsiveProp: (nodeId: string, key: string) => void;
   removeSelected: () => void;
   duplicateSelected: () => void;
+  copySelected: () => void;
+  pasteCopied: () => void;
   undo: () => void;
   redo: () => void;
   save: (manual?: boolean) => Promise<void>;
@@ -92,6 +96,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   activeBreakpoint: "desktop",
   undoStack: [],
   redoStack: [],
+  copiedNode: null,
   saveStatus: "saved",
   lastSavedAt: null,
   expectedVersion: 1,
@@ -195,7 +200,67 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   duplicateSelected: () => {
     const { page, selectedNodeId, commit } = get();
     if (!page || !selectedNodeId || selectedNodeId === page.root.id) return;
-    commit(duplicateNode(page, selectedNodeId));
+    try {
+      const nextDoc = duplicateNode(page, selectedNodeId);
+      commit(nextDoc);
+
+      const parentInNext = findParentLocal(nextDoc.root, selectedNodeId);
+      if (parentInNext && parentInNext.parent.children) {
+        const duplicated = parentInNext.parent.children[parentInNext.index + 1];
+        if (duplicated) set({ selectedNodeId: duplicated.id });
+      }
+    } catch (e) {
+      /* ignore */
+    }
+  },
+
+  copySelected: () => {
+    const { page, selectedNodeId } = get();
+    if (!page || !selectedNodeId) return;
+
+    // Always use the object/component data; do not duplicate pages natively
+    if (selectedNodeId === "page" || selectedNodeId === page.root.id) {
+      // Typically, we don't want to copy the entire page root as a duplicate. But if we do, 
+      // format it into the clipboard payload to be pasted on a page context.
+      set({ copiedNode: { objects: [page.root], sourcePageId: page.pageId } });
+      return;
+    }
+
+    const node = findNodeLocal(page.root, selectedNodeId);
+    if (node) {
+      set({ copiedNode: { objects: [node], sourcePageId: page.pageId } });
+    }
+  },
+
+  pasteCopied: async () => {
+    const { page, selectedNodeId, copiedNode, commit } = get();
+    if (!page || !copiedNode || !copiedNode.objects.length) return;
+
+    // Paste operation must always use the currently active page/canvas
+    const sourceNode = copiedNode.objects[0];
+    if (!sourceNode) return;
+
+    const targetId = (selectedNodeId && selectedNodeId !== "page") ? selectedNodeId : page.root.id;
+    try {
+      const nextDoc = pasteNode(page, targetId, sourceNode);
+      commit(nextDoc);
+
+      const targetInNext = findNodeLocal(nextDoc.root, targetId);
+      if (targetInNext) {
+        if (targetInNext.children && targetInNext.children.length > 0) {
+          const pasted = targetInNext.children[targetInNext.children.length - 1];
+          if (pasted) set({ selectedNodeId: pasted.id });
+        } else {
+          const parentInNext = findParentLocal(nextDoc.root, targetId);
+          if (parentInNext && parentInNext.parent.children) {
+            const pasted = parentInNext.parent.children[parentInNext.index + 1];
+            if (pasted) set({ selectedNodeId: pasted.id });
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to paste node:", err);
+    }
   },
 
   undo: () => {
@@ -272,6 +337,17 @@ function findNodeLocal(root: ComponentNode, id: string): ComponentNode | null {
   for (const c of root.children ?? []) {
     const f = findNodeLocal(c, id);
     if (f) return f;
+  }
+  return null;
+}
+
+function findParentLocal(root: ComponentNode, id: string): { parent: ComponentNode; index: number } | null {
+  const children = root.children ?? [];
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]!;
+    if (child.id === id) return { parent: root, index: i };
+    const nested = findParentLocal(child, id);
+    if (nested) return nested;
   }
   return null;
 }

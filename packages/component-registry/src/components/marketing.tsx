@@ -71,6 +71,8 @@ export const HeroComponent: ComponentDefinition<HeroProps> = {
         className={className}
         style={{
           ...style,
+          width: "100%",
+          boxSizing: "border-box",
           backgroundColor: props.backgroundImage ? undefined : "#0f1f4d",
           color: "#ffffff",
         }}
@@ -134,7 +136,7 @@ export const CtaBannerComponent: ComponentDefinition<{
     backgroundColor: (v) => ({ "background-color": String(v) }),
   },
   render: ({ props, className, style, isEditing }) => (
-    <aside className={className} style={{ ...style, textAlign: "center" }}>
+    <aside className={className} style={{ ...style, width: "100%", boxSizing: "border-box", textAlign: "center" }}>
       <h2 style={{ margin: "0 0 8px" }}>{props.heading}</h2>
       <p style={{ margin: "0 0 16px", color: "#6b7280" }}>{props.body}</p>
       <a
@@ -182,7 +184,7 @@ export const TestimonialComponent: ComponentDefinition<{
   }),
   styleMap: { padding: (v) => pad(v) },
   render: ({ props, className, style }) => (
-    <blockquote className={className} style={{ ...style, margin: 0, borderLeft: "4px solid #3b6ff0" }}>
+    <blockquote className={className} style={{ ...style, width: "100%", boxSizing: "border-box", margin: 0, borderLeft: "4px solid #3b6ff0" }}>
       <p style={{ fontSize: 18, margin: "0 0 12px" }}>&ldquo;{props.quote}&rdquo;</p>
       <footer style={{ color: "#6b7280", fontSize: 14 }}>
         <strong style={{ color: "#111318" }}>{props.author}</strong> — {props.role}
@@ -221,7 +223,7 @@ export const FeatureGridComponent: ComponentDefinition<{
   }),
   styleMap: { padding: (v) => pad(v) },
   render: ({ props, className, style, breakpoint }) => (
-    <section className={className} style={{ ...style, color: "#111318" }}>
+    <section className={className} style={{ ...style, width: "100%", boxSizing: "border-box", color: "#111318" }}>
       <h2 style={{ margin: "0 0 24px", color: "#111318" }}>{props.title}</h2>
       <div
         style={{

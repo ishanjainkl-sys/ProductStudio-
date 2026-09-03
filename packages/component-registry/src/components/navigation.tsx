@@ -34,6 +34,8 @@ export const NavbarComponent: ComponentDefinition<{
       className={className}
       style={{
         ...style,
+        width: "100%",
+        boxSizing: "border-box",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -86,6 +88,8 @@ export const FooterComponent: ComponentDefinition<{
       className={className}
       style={{
         ...style,
+        width: "100%",
+        boxSizing: "border-box",
         padding: "32px 24px",
         borderTop: "1px solid #e5e7eb",
         display: "flex",

@@ -168,15 +168,40 @@ export function duplicateNode(doc: PageDocument, nodeId: NodeId): PageDocument {
   const location = findParent(doc.root, nodeId);
   if (!location) throw new Error(`Node not found: ${nodeId}`);
   const source = location.parent.children![location.index]!;
+
   const idMap = new Map<string, string>();
   let clone = regenerateIds(source, idMap);
-  clone = {
-    ...clone,
-    props: remapRefs(clone.props, idMap) as Record<string, unknown>,
-    responsiveProps: remapRefs(clone.responsiveProps, idMap) as ComponentNode["responsiveProps"],
-  };
+  clone = mapTree(clone, (n) => ({
+    ...n,
+    props: remapRefs(n.props, idMap) as Record<string, unknown>,
+    responsiveProps: remapRefs(n.responsiveProps, idMap) as ComponentNode["responsiveProps"],
+  }));
 
   return insertNode(doc, location.parent.id, location.index + 1, clone);
+}
+
+export function pasteNode(doc: PageDocument, targetId: NodeId, sourceNode: ComponentNode): PageDocument {
+  const target = findNode(doc.root, targetId);
+  if (!target) throw new Error(`Target not found: ${targetId}`);
+
+  const idMap = new Map<string, string>();
+  let clone = regenerateIds(sourceNode, idMap);
+  clone = mapTree(clone, (n) => ({
+    ...n,
+    props: remapRefs(n.props, idMap) as Record<string, unknown>,
+    responsiveProps: remapRefs(n.responsiveProps, idMap) as ComponentNode["responsiveProps"],
+  }));
+
+  if (target.children) {
+    // If target is a container, paste inside at the end
+    return insertNode(doc, target.id, target.children.length, clone);
+  } else {
+    // If target is not a container, paste as a sibling after target
+    if (target.id === doc.root.id) throw new Error("Cannot paste as sibling of root");
+    const location = findParent(doc.root, target.id);
+    if (!location) throw new Error(`Target location not found: ${target.id}`);
+    return insertNode(doc, location.parent.id, location.index + 1, clone);
+  }
 }
 
 export function cloneDocumentWithNewIds(doc: PageDocument): {
@@ -218,6 +243,7 @@ export interface JsonEngine {
   updateNodeProps: typeof updateNodeProps;
   deleteNode: typeof deleteNode;
   duplicateNode: typeof duplicateNode;
+  pasteNode: typeof pasteNode;
 }
 
 export const jsonEngine: JsonEngine = {
@@ -226,4 +252,5 @@ export const jsonEngine: JsonEngine = {
   updateNodeProps,
   deleteNode,
   duplicateNode,
+  pasteNode,
 };

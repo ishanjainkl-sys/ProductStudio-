@@ -30,6 +30,7 @@ export function errorHandler(
     return;
   }
 
+  import("fs").then(fs => fs.appendFileSync("error.log", "\n" + new Date().toISOString() + "\n" + (err instanceof Error ? err.stack : String(err)) + "\n"));
   console.error(err);
   res.status(500).json({
     error: {

@@ -27,7 +27,6 @@ export function Selectable({
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `drop:${node.id}`,
     data: { type: "drop-container", nodeId: node.id, acceptsChildren: def.acceptsChildren },
-    disabled: !def.acceptsChildren,
   });
 
   const selected = selectedNodeId === node.id;

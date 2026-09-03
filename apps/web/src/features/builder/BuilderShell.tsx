@@ -57,6 +57,8 @@ export function BuilderShell({
   const move = useBuilderStore((s) => s.move);
   const removeSelected = useBuilderStore((s) => s.removeSelected);
   const duplicateSelected = useBuilderStore((s) => s.duplicateSelected);
+  const copySelected = useBuilderStore((s) => s.copySelected);
+  const pasteCopied = useBuilderStore((s) => s.pasteCopied);
   const [ready, setReady] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -115,6 +117,18 @@ export function BuilderShell({
         e.preventDefault();
         duplicateSelected();
       }
+      if (meta && e.key === "c") {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        e.preventDefault();
+        copySelected();
+      }
+      if (meta && e.key === "v") {
+        const tag = (e.target as HTMLElement).tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        e.preventDefault();
+        void pasteCopied();
+      }
       if (e.key === "Delete" || e.key === "Backspace") {
         const tag = (e.target as HTMLElement).tagName;
         if (tag === "INPUT" || tag === "TEXTAREA") return;
@@ -122,9 +136,23 @@ export function BuilderShell({
         removeSelected();
       }
     }
+
+    function onPageDuplicated(e: Event) {
+      const customEvent = e as CustomEvent;
+      const { newPageId, projectId } = customEvent.detail;
+      if (newPageId && projectId) {
+        router.push(`/projects/${projectId}/pages/${newPageId}`);
+        setLeftTab("pages");
+      }
+    }
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, save, duplicateSelected, removeSelected]);
+    window.addEventListener("ps-page-duplicated", onPageDuplicated);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("ps-page-duplicated", onPageDuplicated);
+    };
+  }, [undo, redo, save, duplicateSelected, copySelected, pasteCopied, removeSelected, router, setLeftTab]);
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;

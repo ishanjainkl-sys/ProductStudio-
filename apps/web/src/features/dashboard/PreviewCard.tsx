@@ -45,7 +45,7 @@ export function PreviewCard({
         aspect-[16/9]
         w-full
         overflow-hidden
-        rounded-t-[24px]
+        rounded-t-lg
         border-b border-neutral-100
         bg-neutral-100
         dark:border-neutral-800
@@ -54,27 +54,10 @@ export function PreviewCard({
       "
             onClick={onClick}
         >
-            {/* macOS window bar */}
-            <div
-                className="
-          absolute inset-x-0 top-0 z-30
-          h-7
-          flex items-center gap-1.5
-          px-3
-          border-b border-black/5
-          bg-black/5
-          backdrop-blur-sm
-          dark:border-white/5
-          dark:bg-white/5
-        "
-            >
-                <span className="h-2 w-2 rounded-full bg-red-400 dark:bg-red-500/80" />
-                <span className="h-2 w-2 rounded-full bg-amber-400 dark:bg-amber-500/80" />
-                <span className="h-2 w-2 rounded-full bg-emerald-400 dark:bg-emerald-500/80" />
-            </div>
+
 
             {/* Preview viewport */}
-            <div className="absolute inset-x-0 bottom-0 top-7 overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden">
                 {homePageContent ? (
                     <div
                         className="

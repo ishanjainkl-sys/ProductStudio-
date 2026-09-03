@@ -120,8 +120,7 @@ export function PageFrame({
     return (
         <div
             onClick={(e) => {
-                // Only select the page if they click exactly on the outer container or spacer,
-                // but `Selectable` stops propagation. 
+                // Only select the page if they click exactly on the outer container or spacer, // but `Selectable` stops propagation. 
                 // PageRenderer has a root which we'll have wrapped in Selectable. Wait, PageRenderer renders `page.root` directly.
                 selectNode("page");
             }}
@@ -132,19 +131,28 @@ export function PageFrame({
                 minHeight: `${height}px`,
             }}
         >
-            <PageRenderer
-                document={page}
-                breakpoint={breakpoint}
-                isEditing
-                theme={theme}
-                wrapNode={(node, element) => {
-                    if (node.id === page.root.id) {
-                        // For the root layout.section, we still wrap with Selectable so we can drag into it!
-                        return <Selectable node={node}>{element}</Selectable>;
-                    }
-                    return <Selectable node={node}>{element}</Selectable>;
-                }}
-            />
+            <div style={{ width: "100%", height: "100%", overflow: "hidden", position: "relative" }}>
+                <div
+                    style={{
+                        width: `${BREAKPOINT_WIDTHS[breakpoint]}px`,
+                        minHeight: "100%",
+                        position: "relative",
+                    }}
+                >
+                    <PageRenderer
+                        document={page}
+                        breakpoint={breakpoint}
+                        isEditing
+                        theme={theme}
+                        wrapNode={(node, element) => {
+                            if (node.id === page.root.id) {
+                                return <Selectable node={node}>{element}</Selectable>;
+                            }
+                            return <Selectable node={node}>{element}</Selectable>;
+                        }}
+                    />
+                </div>
+            </div>
 
             {isSelected && (
                 <div

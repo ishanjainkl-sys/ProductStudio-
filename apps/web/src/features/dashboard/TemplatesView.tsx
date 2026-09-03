@@ -126,7 +126,7 @@ export function TemplatesView() {
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-neutral-200/80 bg-transparent pl-[30px] pr-8 h-8 text-[13px] font-medium text-foreground shadow-none outline-none transition-all placeholder:text-neutral-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800  dark:focus:border-primary-500"
+                className="w-full rounded-md border border-neutral-200/80 bg-transparent pl-8 pr-8 h-7 text-[12px] font-medium text-foreground shadow-none outline-none transition-all placeholder:text-neutral-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800  dark:focus:border-primary-500"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
@@ -137,7 +137,7 @@ export function TemplatesView() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full sm:w-auto h-8 overflow-hidden rounded-md border border-neutral-200/80 bg-transparent px-2.5 text-[13px] font-medium text-foreground shadow-none outline-none transition-all focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800 "
+              className="w-full sm:w-auto h-7 overflow-hidden rounded-md border border-neutral-200/80 bg-transparent px-2.5 text-[12px] font-medium text-foreground shadow-none outline-none transition-all focus:border-primary-500 focus:ring-1 focus:ring-primary-500/50 dark:border-neutral-800 "
             >
               <option value="newest">Recently Created</option>
               <option value="nameAsc">Name A–Z</option>
@@ -187,7 +187,7 @@ export function TemplatesView() {
           {filteredTemplates.map((template, index) => (
             <li
               key={template.id}
-              className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-neutral-200/60 bg-card shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-neutral-700/60 hover:-translate-y-1"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-neutral-200/60 bg-card shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-neutral-700/60 hover:-translate-y-1"
             >
               {/* Clean Thumbnail Area */}
               <PreviewCard
@@ -200,10 +200,10 @@ export function TemplatesView() {
                 }}
               />
 
-              <div className="flex flex-1 flex-col p-5 pb-4">
+              <div className="flex flex-1 flex-col p-3 pb-2">
                 <div className="mb-3 flex-1 flex flex-col">
                   <div className="mb-2 flex items-center justify-between gap-3 leading-none">
-                    <h2 className="truncate text-[13px] font-medium text-foreground group-hover:text-primary-700 transition-colors dark:group-hover:text-primary-400">
+                    <h2 className="truncate text-[12px] font-medium text-foreground group-hover:text-primary-700 transition-colors dark:group-hover:text-primary-400">
                       {template.name}
                     </h2>
                     {template.latestVersionNumber ? (

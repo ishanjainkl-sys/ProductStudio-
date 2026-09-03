@@ -91,7 +91,7 @@ export async function createPage(projectId: string, userId: string, input: Creat
       slug,
       isHome: false,
       sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
-      contentJson: content,
+      contentJson: JSON.parse(JSON.stringify(content)),
       seoTitle: input.name,
       version: 1,
     },
@@ -201,7 +201,7 @@ export async function savePage(
     await tx.page.update({
       where: { id: pageId },
       data: {
-        contentJson: nextDoc,
+        contentJson: JSON.parse(JSON.stringify(nextDoc)),
         version: nextVersion,
         updatedAt: savedAt,
         seoTitle: nextDoc.seo.title ?? page.seoTitle,
@@ -231,7 +231,7 @@ export async function duplicatePage(pageId: string, userId: string) {
   let i = 2;
   while (
     await prisma.page.findFirst({
-      where: { projectId: page.projectId, slug, deletedAt: null },
+      where: { projectId: page.projectId, slug },
     })
   ) {
     slug = `${baseSlug}-${i++}`;
@@ -251,6 +251,8 @@ export async function duplicatePage(pageId: string, userId: string) {
     },
   });
 
+  const parsedDoc = pageDocumentSchema.parse(doc);
+
   const maxOrder = await prisma.page.aggregate({
     where: { projectId: page.projectId, deletedAt: null },
     _max: { sortOrder: true },
@@ -264,9 +266,9 @@ export async function duplicatePage(pageId: string, userId: string) {
       slug,
       isHome: false,
       sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
-      contentJson: doc,
-      seoTitle: doc.seo.title ?? `${page.name} Copy`,
-      seoDescription: doc.seo.description ?? "",
+      contentJson: JSON.parse(JSON.stringify(parsedDoc)),
+      seoTitle: parsedDoc.seo.title ?? `${page.name} Copy`,
+      seoDescription: parsedDoc.seo.description ?? "",
       version: 1,
     },
   });

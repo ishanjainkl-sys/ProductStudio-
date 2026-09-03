@@ -44,7 +44,7 @@ export const SectionComponent: ComponentDefinition<{
     backgroundColor: (v) => ({ "background-color": String(v) }),
   },
   render: ({ props, children, className, style }) => (
-    <section className={className} style={{ ...style, width: "100%" }}>
+    <section className={className} style={{ ...style, width: "100%", boxSizing: "border-box" }}>
       <div style={{ maxWidth: props.maxWidth, margin: "0 auto" }}>{children}</div>
     </section>
   ),
@@ -73,7 +73,7 @@ export const ContainerComponent: ComponentDefinition<{
     backgroundColor: (v) => ({ "background-color": String(v) }),
   },
   render: ({ children, className, style }) => (
-    <div className={className} style={style}>
+    <div className={className} style={{ ...style, width: "100%", boxSizing: "border-box" }}>
       {children}
     </div>
   ),
@@ -110,7 +110,7 @@ export const StackComponent: ComponentDefinition<{
     padding: (v) => pad(v),
   },
   render: ({ children, className, style }) => (
-    <div className={className} style={{ ...style, display: "flex" }}>
+    <div className={className} style={{ ...style, width: "100%", boxSizing: "border-box", display: "flex" }}>
       {children}
     </div>
   ),
@@ -150,6 +150,8 @@ export const GridComponent: ComponentDefinition<{
       className={className}
       style={{
         ...style,
+        width: "100%",
+        boxSizing: "border-box",
         display: "grid",
         gridTemplateColumns: `repeat(${props.columns}, minmax(0, 1fr))`,
       }}

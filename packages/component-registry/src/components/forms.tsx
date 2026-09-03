@@ -26,7 +26,7 @@ export const TextInputComponent: ComponentDefinition<{
     name: z.string(),
   }),
   render: ({ props, className, style }) => (
-    <label className={className} style={{ ...style, display: "block" }}>
+    <label className={className} style={{ ...style, width: "100%", boxSizing: "border-box", display: "block" }}>
       <span style={{ display: "block", marginBottom: 6, fontWeight: 500 }}>
         {props.label}
         {props.required ? " *" : ""}
@@ -38,6 +38,7 @@ export const TextInputComponent: ComponentDefinition<{
         required={props.required}
         style={{
           width: "100%",
+          boxSizing: "border-box",
           padding: "10px 12px",
           border: "1px solid #d1d5db",
           borderRadius: 8,
@@ -68,7 +69,7 @@ export const FormContainerComponent: ComponentDefinition<{
   render: ({ props, children, className, style, isEditing }) => (
     <form
       className={className}
-      style={{ ...style, display: "flex", flexDirection: "column", gap: 16 }}
+      style={{ ...style, width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 16 }}
       action={isEditing ? undefined : props.action}
       method={props.method}
       onSubmit={isEditing ? (e) => e.preventDefault() : undefined}

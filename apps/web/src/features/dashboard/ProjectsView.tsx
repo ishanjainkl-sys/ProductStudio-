@@ -220,7 +220,7 @@ export function ProjectsView() {
               Projects
             </h1>
           </div>
-          <Button onClick={() => void openModal()} size="sm" className="shrink-0 w-full sm:w-auto h-8 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-none transition-transform active:scale-95 text-[13px] font-medium">
+          <Button onClick={() => void openModal()} size="sm" className="shrink-0 w-full sm:w-auto h-7 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-none transition-transform active:scale-95 text-[12px] font-medium">
             <Plus className="mr-1.5 h-3.5 w-3.5" strokeWidth={2} />
             New Project
           </Button>
@@ -233,8 +233,7 @@ export function ProjectsView() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search projects..."
-                className="pl-[30px] pr-8 rounded-md h-8 text-[13px] border-neutral-200/80 bg-white dark:bg-[#1A1A1A] dark:border-[#2C2C2C] shadow-none focus-visible:ring-1 focus-visible:ring-blue-500/50"
+                className="pl-8 pr-8 rounded-md h-7 text-[12px] border-neutral-200/80 bg-white dark:bg-[#1A1A1A] dark:border-[#2C2C2C] shadow-none focus-visible:ring-1 focus-visible:ring-blue-500/50"
               />
               {query && (
                 <button
@@ -248,7 +247,7 @@ export function ProjectsView() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="h-8 w-full sm:w-auto overflow-hidden rounded-md border border-neutral-200/80 bg-white px-2.5 text-[13px] font-medium text-foreground shadow-none outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 dark:bg-[#1A1A1A] dark:border-[#2C2C2C]"
+              className="h-7 w-full sm:w-auto overflow-hidden rounded-md border border-neutral-200/80 bg-white px-2.5 text-[12px] font-medium text-foreground shadow-none outline-none transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 dark:bg-[#1A1A1A] dark:border-[#2C2C2C]"
             >
               <option value="updatedDesc">Recently Updated</option>
               <option value="newest">Recently Created</option>
@@ -288,7 +287,7 @@ export function ProjectsView() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: index * 0.05 }}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-neutral-200/60 bg-white shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-[#2C2C2C] dark:bg-[#1E1E1E] hover:-translate-y-1"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-lg border border-neutral-200/60 bg-white shadow-sm transition-all duration-300 hover:shadow-[0_12px_24px_rgb(0,0,0,0.06)] dark:border-[#2C2C2C] dark:bg-[#1E1E1E] hover:-translate-y-1"
               >
                 {/* Advanced Aspect Ratio Preview */}
                 <PreviewCard
@@ -306,7 +305,7 @@ export function ProjectsView() {
                   }}
                 />
 
-                <div className="flex flex-col flex-1 p-5">
+                <div className="flex flex-col flex-1 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5">
@@ -314,7 +313,7 @@ export function ProjectsView() {
                           Web App
                         </span>
                       </div>
-                      <h2 className="text-[14px] font-medium tracking-tight text-foreground transition-colors group-hover:text-blue-500 truncate mt-1">
+                      <h2 className="text-[13px] font-medium tracking-tight text-foreground transition-colors group-hover:text-blue-500 truncate mt-1">
                         {p.name}
                       </h2>
                     </div>
