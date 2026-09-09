@@ -76,6 +76,8 @@ export interface PageDocument {
     version: number;
     viewport?: "desktop" | "tablet" | "mobile";
     isBlank?: boolean;
+    canvasX?: number;
+    canvasY?: number;
     dimensions?: Partial<Record<Breakpoint, { width: number; height: number }>>;
   };
 }

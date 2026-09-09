@@ -88,7 +88,7 @@ export const SubmitButtonComponent: ComponentDefinition<{ label: string }> = {
   responsiveProps: [],
   defaultProps: { label: "Submit" },
   propsSchema: z.object({ label: z.string() }),
-  render: ({ props, className, style }) => (
+  render: ({ props, className, style, breakpoint }) => (
     <button
       type="submit"
       className={className}
@@ -98,7 +98,8 @@ export const SubmitButtonComponent: ComponentDefinition<{ label: string }> = {
         color: "#fff",
         border: "none",
         borderRadius: 8,
-        padding: "12px 20px",
+        padding: breakpoint === "mobile" ? "10px 16px" : "12px 20px",
+        fontSize: breakpoint === "mobile" ? 14 : 16,
         fontWeight: 600,
         cursor: "pointer",
       }}

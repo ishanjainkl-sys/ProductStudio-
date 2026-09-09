@@ -59,6 +59,8 @@ export const pageDocumentSchema = z.object({
     version: z.number().int().nonnegative(),
     viewport: z.enum(["desktop", "tablet", "mobile"]).optional(),
     isBlank: z.boolean().optional(),
+    canvasX: z.number().optional(),
+    canvasY: z.number().optional(),
     dimensions: z
       .record(
         z.enum(["desktop", "tablet", "mobile"]),

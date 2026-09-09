@@ -50,11 +50,18 @@ export const TextComponent: ComponentDefinition<{
     textAlign: (v) => ({ "text-align": String(v) }),
     padding: (v) => pad(v),
   },
-  render: ({ props, className, style }) => (
-    <p className={className} style={style}>
-      {props.text}
-    </p>
-  ),
+  render: ({ props, className, style, breakpoint }) => {
+    const sizeMap: Record<string, number> = { xs: 12, sm: 14, base: 16, lg: 18, xl: 20, "2xl": 24, "3xl": 30 };
+    let fontSize = sizeMap[props.fontSize] || 16;
+    if (breakpoint === "mobile") fontSize = Math.max(12, fontSize * 0.85);
+    else if (breakpoint === "tablet") fontSize = Math.max(14, fontSize * 0.95);
+
+    return (
+      <p className={className} style={{ ...style, fontSize, margin: 0, wordBreak: "break-word" }}>
+        {props.text}
+      </p>
+    );
+  },
 };
 
 export const HeadingComponent: ComponentDefinition<{
@@ -89,10 +96,15 @@ export const HeadingComponent: ComponentDefinition<{
     textAlign: (v) => ({ "text-align": String(v) }),
     padding: (v) => pad(v),
   },
-  render: ({ props, className, style }) => {
+  render: ({ props, className, style, breakpoint }) => {
+    const levelSizeMap: Record<number, number> = { 1: 40, 2: 32, 3: 28, 4: 24, 5: 20, 6: 16 };
+    let fontSize = levelSizeMap[props.level] || 32;
+    if (breakpoint === "mobile") fontSize = Math.max(18, Math.floor(fontSize * 0.75));
+    else if (breakpoint === "tablet") fontSize = Math.max(20, Math.floor(fontSize * 0.85));
+
     const Tag = `h${props.level}` as "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
     return (
-      <Tag className={className} style={style}>
+      <Tag className={className} style={{ ...style, fontSize, lineHeight: 1.2, margin: 0, wordBreak: "break-word" }}>
         {props.text}
       </Tag>
     );
@@ -126,7 +138,7 @@ export const ButtonComponent: ComponentDefinition<{
   styleMap: {
     padding: (v) => pad(v),
   },
-  render: ({ props, className, style, isEditing }) => {
+  render: ({ props, className, style, isEditing, breakpoint }) => {
     const bg =
       props.variant === "primary"
         ? "#3b6ff0"
@@ -147,6 +159,8 @@ export const ButtonComponent: ComponentDefinition<{
           borderRadius: 8,
           textDecoration: "none",
           fontWeight: 600,
+          fontSize: breakpoint === "mobile" ? 14 : 16,
+          textAlign: "center",
         }}
         onClick={isEditing ? (e) => e.preventDefault() : undefined}
       >

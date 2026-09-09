@@ -53,6 +53,12 @@ export function Selectable({
           window.dispatchEvent(new CustomEvent('ps-edit-team-member', { detail: null }));
         }
       }}
+      onContextMenu={(e) => {
+        e.stopPropagation();
+        selectNode(node.id);
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('ps-context-menu', { detail: { x: e.clientX, y: e.clientY } }));
+      }}
       onMouseEnter={(e) => {
         e.stopPropagation();
         setHovered(node.id);

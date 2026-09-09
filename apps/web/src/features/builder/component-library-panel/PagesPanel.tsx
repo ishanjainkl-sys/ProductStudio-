@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
+import { cloneDocumentWithNewIds } from "@productstudio/json-engine";
+import type { PageDocument } from "@productstudio/shared-types";
+import { useBuilderStore } from "../state/builder-store";
 
 interface PageRow {
   id: string;
@@ -11,10 +13,13 @@ interface PageRow {
   isHome: boolean;
 }
 
-export function PagesPanel({ projectId, pageId }: { projectId: string; pageId: string }) {
-  const router = useRouter();
+export function PagesPanel({ projectId }: { projectId: string }) {
+  const switchPage = useBuilderStore((s) => s.switchPage);
+  const pageId = useBuilderStore((s) => s.page?.pageId);
   const [pages, setPages] = useState<PageRow[]>([]);
   const [name, setName] = useState("");
+  const [renamingPageId, setRenamingPageId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, page: PageRow } | null>(null);
 
   useEffect(() => {
@@ -39,7 +44,7 @@ export function PagesPanel({ projectId, pageId }: { projectId: string; pageId: s
       if (p.id === pageId) {
         const homePage = newPages.find((x) => x.isHome) || newPages[0];
         if (homePage) {
-          router.push(`/projects/${projectId}/pages/${homePage.id}`);
+          void switchPage(homePage.id);
         }
       }
     } catch (err) {
@@ -51,6 +56,7 @@ export function PagesPanel({ projectId, pageId }: { projectId: string; pageId: s
   async function reload() {
     const data = await api.get<PageRow[]>(`/api/projects/${projectId}/pages`);
     setPages(data);
+    return data;
   }
 
   useEffect(() => {
@@ -63,26 +69,179 @@ export function PagesPanel({ projectId, pageId }: { projectId: string; pageId: s
       name: name.trim(),
     });
     setName("");
-    router.push(`/projects/${projectId}/pages/${created.id}`);
+    void switchPage(created.id);
+  }
+
+  async function handleRename(p: PageRow) {
+    if (renamingPageId !== p.id) return;
+    const newName = renameValue.trim();
+    if (!newName) {
+      setRenamingPageId(null);
+      return;
+    }
+
+    // Setting ID to null first prevents onBlur from triggering duplicate requests
+    setRenamingPageId(null);
+
+    if (newName !== p.name) {
+      setPages(prev => prev.map(x => x.id === p.id ? { ...x, name: newName } : x));
+      try {
+        await api.patch(`/api/pages/${p.id}`, { name: newName });
+        await reload();
+      } catch (err) {
+        console.error("Failed to rename page:", err);
+        alert("Failed to rename page.");
+        await reload();
+      }
+    }
+  }
+
+  async function handleCopyPage(p: PageRow) {
+    try {
+      const resp = await api.get<{ contentJson: PageDocument }>(`/api/pages/${p.id}`);
+      const payload = {
+        type: "productstudio/page",
+        version: 1,
+        page: resp.contentJson,
+      };
+      await navigator.clipboard.writeText(JSON.stringify(payload));
+    } catch (err) {
+      console.error("Failed to copy page:", err);
+      alert("Failed to copy page.");
+    }
+  }
+
+  async function handlePastePage() {
+    try {
+      const text = await navigator.clipboard.readText();
+      let payload;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        alert("Clipboard does not contain valid data.");
+        return;
+      }
+
+      if (payload?.type !== "productstudio/page" || !payload.page) {
+        alert("Clipboard does not contain a valid copied page.");
+        return;
+      }
+
+      const sourceDoc = payload.page as PageDocument;
+      let newName = sourceDoc.name;
+
+      if (!newName.endsWith(" Copy")) {
+        newName += " Copy";
+      } else {
+        const match = newName.match(/ Copy (\d+)$/);
+        if (match && match[1]) {
+          newName = newName.replace(/ Copy \d+$/, ` Copy ${parseInt(match[1]) + 1}`);
+        } else {
+          newName += " 2";
+        }
+      }
+
+      // Create new page
+      const created = await api.post<{ id: string; version: number }>(`/api/projects/${projectId}/pages`, {
+        name: newName,
+      });
+
+      // Clone document with new IDs
+      const { doc } = cloneDocumentWithNewIds(sourceDoc);
+
+      const { BREAKPOINT_WIDTHS } = await import("@productstudio/shared-types");
+      const viewport = sourceDoc.metadata?.viewport || "desktop";
+      const width = sourceDoc.metadata?.dimensions?.[viewport]?.width ?? BREAKPOINT_WIDTHS[viewport];
+
+      let maxCanvasX = sourceDoc.metadata?.canvasX || 0;
+      if (typeof window !== "undefined" && (window as any).__lastMaxCanvasX !== undefined) {
+        maxCanvasX = Math.max(maxCanvasX, (window as any).__lastMaxCanvasX);
+      }
+      document.querySelectorAll("[data-canvas-x]").forEach(el => {
+        const x = parseFloat(el.getAttribute("data-canvas-x") || "0");
+        if (x > maxCanvasX) maxCanvasX = x;
+      });
+      const offsetX = maxCanvasX + width + 100;
+      if (typeof window !== "undefined") (window as any).__lastMaxCanvasX = offsetX;
+
+      const nextDoc = {
+        ...doc,
+        pageId: created.id,
+        projectId: projectId,
+        name: newName,
+        metadata: {
+          ...doc.metadata,
+          canvasX: offsetX,
+          canvasY: sourceDoc.metadata?.canvasY || 0
+        }
+      };
+
+      await api.post(`/api/pages/${created.id}/save`, {
+        contentJson: nextDoc,
+        expectedVersion: created.version ?? 1,
+      });
+
+      await reload();
+
+      window.dispatchEvent(new CustomEvent("ps-other-pages-changed"));
+      void switchPage(created.id);
+    } catch (err) {
+      console.error("Paste failed:", err);
+      alert("Paste failed.");
+    }
   }
 
   return (
     <>
-      <div className="flex h-full flex-col p-3 relative">
+      <div
+        className="flex h-full flex-col p-3 relative outline-none"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+          if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+            const activePage = pages.find(p => p.id === pageId);
+            if (activePage) {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.stopImmediatePropagation();
+              void handleCopyPage(activePage);
+            }
+          } else if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            void handlePastePage();
+          }
+        }}
+      >
         <ul className="flex-1 space-y-1 overflow-auto">
           {pages.map((p) => (
             <li key={p.id}>
-              <button
-                className={`w-full rounded-md px-3 py-2 text-left text-sm ${p.id === pageId ? "bg-primary-50 text-primary-900" : "hover:bg-neutral-100 dark:hover:bg-white/5"}`}
-                onClick={() => router.push(`/projects/${projectId}/pages/${p.id}`)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setContextMenu({ x: e.clientX, y: e.clientY, page: p });
-                }}
-              >
-                {p.name}
-                {p.isHome ? <span className="ml-2 text-[10px] text-neutral-500">HOME</span> : null}
-              </button>
+              {renamingPageId === p.id ? (
+                <input
+                  autoFocus
+                  className="w-full rounded-md px-3 py-1.5 text-sm border border-neutral-300 focus:border-primary-500 focus:outline-none dark:bg-black/20 dark:border-white/10 dark:text-white"
+                  value={renameValue}
+                  onChange={e => setRenameValue(e.target.value)}
+                  onBlur={() => void handleRename(p)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") void handleRename(p);
+                    if (e.key === "Escape") setRenamingPageId(null);
+                  }}
+                />
+              ) : (
+                <button
+                  className={`w-full rounded-md px-3 py-2 text-left text-sm ${p.id === pageId ? "bg-primary-50 text-primary-900" : "hover:bg-neutral-100 dark:hover:bg-white/5"}`}
+                  onClick={() => void switchPage(p.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY, page: p });
+                  }}
+                >
+                  {p.name}
+                  {p.isHome ? <span className="ml-2 text-[10px] text-neutral-500">HOME</span> : null}
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -108,6 +267,34 @@ export function PagesPanel({ projectId, pageId }: { projectId: string; pageId: s
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            className="w-full text-left rounded-sm px-2 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-white/5"
+            onClick={() => {
+              setContextMenu(null);
+              void handleCopyPage(contextMenu.page);
+            }}
+          >
+            Copy Page
+          </button>
+          <button
+            className="w-full text-left rounded-sm px-2 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-white/5"
+            onClick={() => {
+              setContextMenu(null);
+              void handlePastePage();
+            }}
+          >
+            Paste Page
+          </button>
+          <button
+            className="w-full text-left rounded-sm px-2 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-white/5"
+            onClick={() => {
+              setContextMenu(null);
+              setRenamingPageId(contextMenu.page.id);
+              setRenameValue(contextMenu.page.name);
+            }}
+          >
+            Rename Page
+          </button>
           <button
             className={`w-full text-left rounded-sm px-2 py-1.5 ${contextMenu.page.isHome ? "text-neutral-400 cursor-not-allowed" : "text-red-600 hover:bg-neutral-100 dark:hover:bg-white/5"}`}
             disabled={contextMenu.page.isHome}

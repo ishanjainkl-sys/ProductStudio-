@@ -29,7 +29,7 @@ export const NavbarComponent: ComponentDefinition<{
   styleMap: {
     backgroundColor: (v) => ({ "background-color": String(v) }),
   },
-  render: ({ props, className, style, isEditing }) => (
+  render: ({ props, className, style, isEditing, breakpoint }) => (
     <nav
       className={className}
       style={{
@@ -39,7 +39,9 @@ export const NavbarComponent: ComponentDefinition<{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "16px 24px",
+        flexWrap: breakpoint === "mobile" ? "wrap" : "nowrap",
+        gap: 16,
+        padding: breakpoint === "mobile" ? "12px 16px" : "16px 24px",
         borderBottom: "1px solid #e5e7eb",
       }}
       aria-label="Primary"
@@ -83,16 +85,19 @@ export const FooterComponent: ComponentDefinition<{
     copyright: z.string(),
     links: z.array(z.object({ label: z.string(), href: z.string() })),
   }),
-  render: ({ props, className, style, isEditing }) => (
+  render: ({ props, className, style, isEditing, breakpoint }) => (
     <footer
       className={className}
       style={{
         ...style,
         width: "100%",
         boxSizing: "border-box",
-        padding: "32px 24px",
+        padding: breakpoint === "mobile" ? "24px 16px" : "32px 24px",
         borderTop: "1px solid #e5e7eb",
         display: "flex",
+        flexDirection: breakpoint === "mobile" ? "column" : "row",
+        alignItems: breakpoint === "mobile" ? "center" : "flex-start",
+        gap: 16,
         justifyContent: "space-between",
         color: "#6b7280",
         fontSize: 14,

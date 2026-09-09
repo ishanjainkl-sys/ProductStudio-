@@ -64,23 +64,33 @@ export const HeroComponent: ComponentDefinition<HeroProps> = {
         ? { "background-image": `url(${v})`, "background-size": "cover" }
         : { "background-image": "none", "background-size": "auto" },
   },
-  render: ({ props, className, style, isEditing }) => {
+  render: ({ props, className, style, isEditing, breakpoint }) => {
     const sizeMap = { xl: 22, "2xl": 28, "3xl": 36 } as const;
+    let titleSize = sizeMap[props.headingSize] as number;
+    let responsiveStyle: any = {};
+    if (breakpoint === "mobile") {
+      titleSize = Math.min(titleSize, 28);
+      if (props.padding.top === 96) responsiveStyle.paddingTop = "48px";
+      if (props.padding.bottom === 96) responsiveStyle.paddingBottom = "48px";
+    }
+
     return (
       <section
         className={className}
         style={{
           ...style,
+          ...responsiveStyle,
           width: "100%",
           boxSizing: "border-box",
           backgroundColor: props.backgroundImage ? undefined : "#0f1f4d",
           color: "#ffffff",
+          overflow: "hidden",
         }}
       >
-        <h1 style={{ fontSize: sizeMap[props.headingSize], margin: "0 0 16px", fontWeight: 700 }}>
+        <h1 style={{ fontSize: titleSize, margin: "0 0 16px", fontWeight: 700, lineHeight: 1.2, wordBreak: "break-word" }}>
           {props.heading}
         </h1>
-        <p style={{ fontSize: 18, margin: "0 0 24px", opacity: 0.9 }}>{props.subheading}</p>
+        <p style={{ fontSize: breakpoint === "mobile" ? 16 : 18, margin: "0 0 24px", opacity: 0.9, lineHeight: 1.5 }}>{props.subheading}</p>
         <a
           href={isEditing ? undefined : props.ctaHref}
           onClick={isEditing ? (e) => e.preventDefault() : undefined}
@@ -135,27 +145,34 @@ export const CtaBannerComponent: ComponentDefinition<{
     padding: (v) => pad(v),
     backgroundColor: (v) => ({ "background-color": String(v) }),
   },
-  render: ({ props, className, style, isEditing }) => (
-    <aside className={className} style={{ ...style, width: "100%", boxSizing: "border-box", textAlign: "center" }}>
-      <h2 style={{ margin: "0 0 8px" }}>{props.heading}</h2>
-      <p style={{ margin: "0 0 16px", color: "#6b7280" }}>{props.body}</p>
-      <a
-        href={isEditing ? undefined : props.ctaHref}
-        onClick={isEditing ? (e) => e.preventDefault() : undefined}
-        style={{
-          display: "inline-block",
-          background: "#3b6ff0",
-          color: "#fff",
-          padding: "10px 18px",
-          borderRadius: 8,
-          textDecoration: "none",
-          fontWeight: 600,
-        }}
-      >
-        {props.ctaLabel}
-      </a>
-    </aside>
-  ),
+  render: ({ props, className, style, isEditing, breakpoint }) => {
+    let responsiveStyle: any = {};
+    if (breakpoint === "mobile") {
+      if (props.padding.top === 48) responsiveStyle.paddingTop = "32px";
+      if (props.padding.bottom === 48) responsiveStyle.paddingBottom = "32px";
+    }
+    return (
+      <aside className={className} style={{ ...style, ...responsiveStyle, width: "100%", boxSizing: "border-box", textAlign: "center", overflow: "hidden" }}>
+        <h2 style={{ margin: "0 0 8px", fontSize: breakpoint === "mobile" ? 24 : 32, fontWeight: 700, lineHeight: 1.2, wordBreak: "break-word" }}>{props.heading}</h2>
+        <p style={{ margin: "0 0 16px", color: "#6b7280", fontSize: breakpoint === "mobile" ? 16 : 18, lineHeight: 1.5 }}>{props.body}</p>
+        <a
+          href={isEditing ? undefined : props.ctaHref}
+          onClick={isEditing ? (e) => e.preventDefault() : undefined}
+          style={{
+            display: "inline-block",
+            background: "#3b6ff0",
+            color: "#fff",
+            padding: "10px 18px",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
+        >
+          {props.ctaLabel}
+        </a>
+      </aside>
+    );
+  },
 };
 
 export const TestimonialComponent: ComponentDefinition<{
@@ -183,14 +200,21 @@ export const TestimonialComponent: ComponentDefinition<{
     padding: spacingSchema,
   }),
   styleMap: { padding: (v) => pad(v) },
-  render: ({ props, className, style }) => (
-    <blockquote className={className} style={{ ...style, width: "100%", boxSizing: "border-box", margin: 0, borderLeft: "4px solid #3b6ff0" }}>
-      <p style={{ fontSize: 18, margin: "0 0 12px" }}>&ldquo;{props.quote}&rdquo;</p>
-      <footer style={{ color: "#6b7280", fontSize: 14 }}>
-        <strong style={{ color: "#111318" }}>{props.author}</strong> — {props.role}
-      </footer>
-    </blockquote>
-  ),
+  render: ({ props, className, style, breakpoint }) => {
+    let responsiveStyle: any = {};
+    if (breakpoint === "mobile") {
+      if (props.padding.top === 32) responsiveStyle.paddingTop = "16px";
+      if (props.padding.bottom === 32) responsiveStyle.paddingBottom = "16px";
+    }
+    return (
+      <blockquote className={className} style={{ ...style, ...responsiveStyle, width: "100%", boxSizing: "border-box", margin: 0, borderLeft: "4px solid #3b6ff0", overflow: "hidden" }}>
+        <p style={{ fontSize: breakpoint === "mobile" ? 16 : 18, margin: "0 0 12px", lineHeight: 1.5, fontStyle: "italic" }}>&ldquo;{props.quote}&rdquo;</p>
+        <footer style={{ color: "#6b7280", fontSize: breakpoint === "mobile" ? 12 : 14 }}>
+          <strong style={{ color: "#111318" }}>{props.author}</strong> — {props.role}
+        </footer>
+      </blockquote>
+    );
+  },
 };
 
 export const FeatureGridComponent: ComponentDefinition<{
@@ -222,23 +246,30 @@ export const FeatureGridComponent: ComponentDefinition<{
     padding: spacingSchema,
   }),
   styleMap: { padding: (v) => pad(v) },
-  render: ({ props, className, style, breakpoint }) => (
-    <section className={className} style={{ ...style, width: "100%", boxSizing: "border-box", color: "#111318" }}>
-      <h2 style={{ margin: "0 0 24px", color: "#111318" }}>{props.title}</h2>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: breakpoint === "mobile" ? "1fr" : `repeat(${props.columns}, minmax(0, 1fr))`,
-          gap: 24,
-        }}
-      >
-        {props.features.map((f) => (
-          <article key={f.title}>
-            <h3 style={{ margin: "0 0 8px", color: "#111318" }}>{f.title}</h3>
-            <p style={{ margin: 0, color: "#4b5563" }}>{f.description}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  ),
+  render: ({ props, className, style, breakpoint }) => {
+    let responsiveStyle: any = {};
+    if (breakpoint === "mobile") {
+      if (props.padding.top === 48) responsiveStyle.paddingTop = "32px";
+      if (props.padding.bottom === 48) responsiveStyle.paddingBottom = "32px";
+    }
+    return (
+      <section className={className} style={{ ...style, ...responsiveStyle, width: "100%", boxSizing: "border-box", color: "#111318", overflow: "hidden" }}>
+        <h2 style={{ margin: "0 0 24px", color: "#111318", fontSize: breakpoint === "mobile" ? 24 : 32, fontWeight: 700, lineHeight: 1.2 }}>{props.title}</h2>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: breakpoint === "mobile" ? "1fr" : breakpoint === "tablet" ? `repeat(${Math.min(props.columns, 2)}, minmax(0, 1fr))` : `repeat(${props.columns}, minmax(0, 1fr))`,
+            gap: breakpoint === "mobile" ? 16 : 24,
+          }}
+        >
+          {props.features.map((f) => (
+            <article key={f.title}>
+              <h3 style={{ margin: "0 0 8px", color: "#111318" }}>{f.title}</h3>
+              <p style={{ margin: 0, color: "#4b5563" }}>{f.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    );
+  },
 };

@@ -44,7 +44,7 @@ export function PropertiesPanel() {
 
   if (!page || !node || !def) {
     return (
-      <div className="flex h-full items-center justify-center bg-white dark:bg-transparent p-4 text-center text-[12px] text-neutral-500 dark:text-neutral-400">
+      <div className="flex h-full items-center justify-center bg-white dark:bg-transparent p-4 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
         <p>Select a component to edit its properties</p>
       </div>
     );
@@ -76,8 +76,8 @@ export function PropertiesPanel() {
       node!.responsiveProps[activeBreakpoint]?.[key] !== undefined;
 
     const label = (
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[12px] font-semibold text-foreground">{key}</span>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[11px] font-medium text-foreground">{key}</span>
         {hasOverride ? (
           <button
             className="text-[10px] text-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
@@ -94,7 +94,7 @@ export function PropertiesPanel() {
 
     if (typeof value === "boolean") {
       return (
-        <div key={key} className="mb-4 flex flex-col gap-1">
+        <div key={key} className="mb-3 flex flex-col gap-1">
           {label}
           <div>
             <input
@@ -110,11 +110,11 @@ export function PropertiesPanel() {
 
     if (typeof value === "number") {
       return (
-        <div key={key} className="mb-4 flex flex-col gap-1">
+        <div key={key} className="mb-3 flex flex-col gap-1">
           {label}
           <input
             type="number"
-            className="h-7 w-full rounded-[4px] border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[12px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111]"
+            className="h-7 w-full rounded-[4px] border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111]"
             value={Number(editingProps[key] ?? 0)}
             onChange={(e) => updateProps(node!.id, { [key]: Number(e.target.value) })}
           />
@@ -130,15 +130,15 @@ export function PropertiesPanel() {
         right: number;
       };
       return (
-        <div key={key} className="mb-4">
+        <div key={key} className="mb-3">
           {label}
-          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-2">
             {(["top", "right", "bottom", "left"] as const).map((side) => (
-              <label key={side} className="flex flex-col gap-1 text-[11px] text-neutral-500 dark:text-neutral-400 capitalize">
+              <label key={side} className="flex flex-col gap-1 text-[10px] text-neutral-500 dark:text-neutral-400 capitalize">
                 {side}
                 <input
                   type="number"
-                  className="h-7 w-full rounded-[4px] border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[12px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111]"
+                  className="h-7 w-full rounded-[4px] border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111]"
                   value={box[side]}
                   onChange={(e) =>
                     updateProps(node!.id, {
@@ -159,11 +159,11 @@ export function PropertiesPanel() {
 
       if (isObjectArray) {
         return (
-          <div key={key} className="mb-4 flex flex-col gap-1">
+          <div key={key} className="mb-3 flex flex-col gap-1">
             {label}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {arrValue.map((item, idx) => (
-                <div key={idx} className="rounded-[4px] border border-neutral-200 dark:border-white/5 bg-neutral-50 dark:bg-[#111111]/30 p-3 flex flex-col gap-2 relative group mt-1">
+                <div key={idx} className="rounded-[4px] border border-neutral-200 dark:border-white/5 bg-neutral-50 dark:bg-[#111111]/30 p-2 flex flex-col gap-2 relative group mt-1">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
                       Item {idx + 1}
@@ -189,7 +189,7 @@ export function PropertiesPanel() {
                         </span>
                         {isMultiline ? (
                           <textarea
-                            className="min-h-[60px] w-full rounded-[4px] border border-neutral-200 bg-white px-2.5 py-1.5 text-[12px] leading-relaxed text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] resize-y"
+                            className="min-h-[60px] w-full rounded-[4px] border border-neutral-200 bg-white px-2 py-1 text-[11px] leading-relaxed text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] resize-y"
                             value={String(item[itemKey] ?? "")}
                             onChange={(e) => {
                               const newArr = [...arrValue];
@@ -199,7 +199,7 @@ export function PropertiesPanel() {
                           />
                         ) : (
                           <input
-                            className="h-7 w-full rounded-[4px] border border-neutral-200 bg-white px-2.5 py-1 text-[12px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a]"
+                            className="h-7 w-full rounded-[4px] border border-neutral-200 bg-white px-2 py-0.5 text-[11px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a]"
                             value={String(item[itemKey] ?? "")}
                             onChange={(e) => {
                               const newArr = [...arrValue];
@@ -214,7 +214,7 @@ export function PropertiesPanel() {
                 </div>
               ))}
               <button
-                className="w-full h-7 rounded-[4px] border border-dashed border-neutral-200 dark:border-white/20 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors"
+                className="w-full h-7 rounded-[4px] border border-dashed border-neutral-200 dark:border-white/20 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors"
                 onClick={() => {
                   const newArr = [...arrValue];
                   const emptyItem: Record<string, string> = {};
@@ -239,10 +239,10 @@ export function PropertiesPanel() {
       }
 
       return (
-        <div key={key} className="mb-4 flex flex-col gap-1">
+        <div key={key} className="mb-3 flex flex-col gap-1">
           {label}
           <textarea
-            className="min-h-[120px] w-full rounded-[4px] border border-neutral-200 bg-neutral-50 px-2.5 py-2 font-mono text-[11px] leading-relaxed text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111] resize-y"
+            className="min-h-[120px] w-full rounded-[4px] border border-neutral-200 bg-neutral-50 px-2 py-1 font-mono text-[10px] leading-relaxed text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111] resize-y"
             value={JSON.stringify(editingProps[key] ?? value, null, 2)}
             onChange={(e) => {
               try {
@@ -262,7 +262,7 @@ export function PropertiesPanel() {
     const isImage = key.toLowerCase().includes("image") || key === "src";
 
     return (
-      <div key={key} className="mb-4 flex flex-col gap-1">
+      <div key={key} className="mb-3 flex flex-col gap-1">
         {label}
         <div className="flex gap-2 relative">
           {isColor ? (
@@ -276,12 +276,12 @@ export function PropertiesPanel() {
             </div>
           ) : null}
           <input
-            className="h-7 flex-1 min-w-0 rounded-[4px] border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-[12px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111]"
+            className="h-7 flex-1 min-w-0 rounded-[4px] border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] text-foreground transition-colors focus:border-[#18A0FB] focus:ring-1 focus:ring-[#18A0FB] focus:bg-white focus:outline-none dark:border-white/5 dark:bg-[#1a1a1a] dark:focus:bg-[#111]"
             value={str === "null" ? "" : str}
             onChange={(e) => updateProps(node!.id, { [key]: e.target.value })}
           />
           {isImage ? (
-            <label className="flex h-7 shrink-0 items-center justify-center rounded-[4px] border border-neutral-200 bg-neutral-50 px-3 text-[11px] font-medium text-foreground cursor-pointer hover:bg-neutral-100 transition-colors dark:border-white/5 dark:bg-[#1a1a1a] dark:hover:bg-[#222]">
+            <label className="flex h-7 shrink-0 items-center justify-center rounded-[4px] border border-neutral-200 bg-neutral-50 px-2 text-[10px] font-medium text-foreground cursor-pointer hover:bg-neutral-100 transition-colors dark:border-white/5 dark:bg-[#1a1a1a] dark:hover:bg-[#222]">
               Upload
               <input
                 type="file"
@@ -316,10 +316,10 @@ export function PropertiesPanel() {
   );
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-transparent" onWheel={(e) => e.stopPropagation()}>
-      <div className="border-b border-neutral-100 dark:border-white/5 px-3 py-2.5 flex-none">
-        <p className="text-[12px] font-semibold text-foreground">{def.displayName}</p>
-        <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-neutral-500 dark:text-neutral-400">
+    <div className="flex h-full flex-col bg-white dark:bg-transparent no-canvas-scroll" onWheel={(e) => e.stopPropagation()}>
+      <div className="border-b border-neutral-100 dark:border-white/5 px-2 py-1.5 flex-none">
+        <p className="text-[11px] font-semibold text-foreground">{def.displayName}</p>
+        <div className="mt-1 flex flex-wrap gap-1 text-[9px] text-neutral-500 dark:text-neutral-400">
           {breadcrumb.map((b, i) => (
             <button key={b.id} className="hover:text-primary-500 dark:hover:text-primary-400 transition-colors" onClick={() => selectNode(b.id)}>
               {b.name}
@@ -344,9 +344,9 @@ export function PropertiesPanel() {
             <div key={tab} className="border-b border-neutral-100 dark:border-white/5">
               <button
                 onClick={() => toggleSection(tab)}
-                className="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-white/5 outline-none focus-visible:bg-neutral-100 dark:focus-visible:bg-white/10"
+                className="flex w-full items-center justify-between px-2 py-1.5 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-white/5 outline-none focus-visible:bg-neutral-100 dark:focus-visible:bg-white/10"
               >
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
                   {tab}
                 </span>
                 {isExpanded ? (
@@ -357,14 +357,14 @@ export function PropertiesPanel() {
               </button>
 
               {isExpanded && (
-                <div className="p-3">
+                <div className="p-2 gap-y-1">
                   <div>
                     {keys.map((key) =>
                       renderField(key, (def.defaultProps as Record<string, unknown>)[key]),
                     )}
                     {tab === "responsive" && activeBreakpoint === "desktop" ? (
-                      <div className="rounded-[4px] border border-dashed border-neutral-200 dark:border-white/5 bg-neutral-50 dark:bg-[#111111]/30 p-3 text-center">
-                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <div className="rounded-[4px] border border-dashed border-neutral-200 dark:border-white/5 bg-neutral-50 dark:bg-[#111111]/30 p-2 text-center">
+                        <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
                           Switch to Tablet or Mobile viewport to set breakpoint overrides.
                         </p>
                       </div>

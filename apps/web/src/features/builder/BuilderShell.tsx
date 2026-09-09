@@ -122,6 +122,19 @@ export function BuilderShell({
         if (tag === "INPUT" || tag === "TEXTAREA") return;
         e.preventDefault();
         copySelected();
+
+        // Also write to system clipboard if page is selected
+        const state = useBuilderStore.getState();
+        if (state.selectedNodeId === "page" || state.selectedNodeId === state.page?.root.id) {
+          if (state.page) {
+            const payload = {
+              type: "productstudio/page",
+              version: 1,
+              page: state.page,
+            };
+            void navigator.clipboard.writeText(JSON.stringify(payload));
+          }
+        }
       }
       if (meta && e.key === "v") {
         const tag = (e.target as HTMLElement).tagName;
@@ -141,7 +154,7 @@ export function BuilderShell({
       const customEvent = e as CustomEvent;
       const { newPageId, projectId } = customEvent.detail;
       if (newPageId && projectId) {
-        router.push(`/projects/${projectId}/pages/${newPageId}`);
+        void useBuilderStore.getState().switchPage(newPageId);
         setLeftTab("pages");
       }
     }
@@ -323,7 +336,7 @@ export function BuilderShell({
             {leftTab === "components" ? (
               <ComponentLibraryPanel />
             ) : (
-              <PagesPanel projectId={projectId} pageId={pageId} />
+              <PagesPanel projectId={projectId} />
             )}
           </aside>
 

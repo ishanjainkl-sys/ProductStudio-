@@ -1,0 +1,1 @@
+const fs=require("fs");const p=require("path");function walk(d){for(const f of fs.readdirSync(d)){const pf=p.join(d,f);if(fs.statSync(pf).isDirectory()){walk(pf);}else if(pf.endsWith(".controller.ts")){let c=fs.readFileSync(pf,"utf8");c=c.replace(/req\.params\.(\w+)!?/g,"(req.params.$1 as string)");fs.writeFileSync(pf,c);}}}walk("src/modules");

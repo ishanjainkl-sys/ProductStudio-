@@ -192,8 +192,8 @@ export function pasteNode(doc: PageDocument, targetId: NodeId, sourceNode: Compo
     responsiveProps: remapRefs(n.responsiveProps, idMap) as ComponentNode["responsiveProps"],
   }));
 
-  if (target.children) {
-    // If target is a container, paste inside at the end
+  if (target.children && target.id !== sourceNode.id) {
+    // If target is a container and it's NOT the exact node we copied, paste inside at the end
     return insertNode(doc, target.id, target.children.length, clone);
   } else {
     // If target is not a container, paste as a sibling after target

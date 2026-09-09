@@ -43,11 +43,21 @@ export const SectionComponent: ComponentDefinition<{
     padding: (v) => pad(v),
     backgroundColor: (v) => ({ "background-color": String(v) }),
   },
-  render: ({ props, children, className, style }) => (
-    <section className={className} style={{ ...style, width: "100%", boxSizing: "border-box" }}>
-      <div style={{ maxWidth: props.maxWidth, margin: "0 auto" }}>{children}</div>
-    </section>
-  ),
+  render: ({ props, children, className, style, breakpoint }) => {
+    const defaultVal = 48;
+    const isDefaultPadding = props.padding.top === defaultVal && props.padding.bottom === defaultVal;
+    let responsiveStyle: any = {};
+    if (isDefaultPadding && breakpoint === "mobile") {
+      responsiveStyle.paddingTop = "32px";
+      responsiveStyle.paddingBottom = "32px";
+    }
+
+    return (
+      <section className={className} style={{ ...style, ...responsiveStyle, width: "100%", boxSizing: "border-box", overflow: "hidden" }}>
+        <div style={{ maxWidth: props.maxWidth, margin: "0 auto" }}>{children}</div>
+      </section>
+    );
+  },
 };
 
 export const ContainerComponent: ComponentDefinition<{
@@ -109,11 +119,22 @@ export const StackComponent: ComponentDefinition<{
     align: (v) => ({ "align-items": String(v) }),
     padding: (v) => pad(v),
   },
-  render: ({ children, className, style }) => (
-    <div className={className} style={{ ...style, width: "100%", boxSizing: "border-box", display: "flex" }}>
-      {children}
-    </div>
-  ),
+  render: ({ props, children, className, style, breakpoint }) => {
+    let styleOverride: any = {};
+    if (breakpoint === "mobile" && props.gap > 8) {
+      styleOverride.gap = `${Math.min(props.gap, 12)}px`;
+    } else if (breakpoint === "tablet" && props.gap > 12) {
+      styleOverride.gap = `${Math.min(props.gap, 16)}px`;
+    }
+    if (breakpoint === "mobile" && props.direction === "row") {
+      styleOverride.flexDirection = "column";
+    }
+    return (
+      <div className={className} style={{ ...style, ...styleOverride, width: "100%", boxSizing: "border-box", display: "flex", overflow: "hidden", flexWrap: "wrap" }}>
+        {children}
+      </div>
+    );
+  },
 };
 
 export const GridComponent: ComponentDefinition<{
@@ -145,20 +166,34 @@ export const GridComponent: ComponentDefinition<{
     gap: (v) => ({ gap: `${v}px` }),
     padding: (v) => pad(v),
   },
-  render: ({ props, children, className, style }) => (
-    <div
-      className={className}
-      style={{
-        ...style,
-        width: "100%",
-        boxSizing: "border-box",
-        display: "grid",
-        gridTemplateColumns: `repeat(${props.columns}, minmax(0, 1fr))`,
-      }}
-    >
-      {children}
-    </div>
-  ),
+  render: ({ props, children, className, style, breakpoint }) => {
+    let cols = props.columns;
+    let styleOverride: any = {};
+    if (breakpoint === "mobile") {
+      cols = Math.min(cols, 1);
+      if (props.gap > 12) styleOverride.gap = `${Math.min(props.gap, 16)}px`;
+    }
+    else if (breakpoint === "tablet") {
+      cols = Math.min(cols, 2);
+    }
+
+    return (
+      <div
+        className={className}
+        style={{
+          ...style,
+          ...styleOverride,
+          width: "100%",
+          boxSizing: "border-box",
+          display: "grid",
+          overflow: "hidden",
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+        }}
+      >
+        {children}
+      </div>
+    );
+  },
 };
 
 export const SpacerComponent: ComponentDefinition<{ height: number }> = {

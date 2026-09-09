@@ -63,11 +63,20 @@ export async function listPages(projectId: string, userId: string) {
 
 export async function createPage(projectId: string, userId: string, input: CreatePageInput) {
   await requireProjectAccess(projectId, userId);
-  const slug = input.slug ?? slugify(input.name);
-  const clash = await prisma.page.findFirst({
-    where: { projectId, slug, deletedAt: null },
-  });
-  if (clash) throw new ValidationError("Slug must be unique within project");
+  let slug = input.slug ?? slugify(input.name);
+
+  if (!input.slug) {
+    const baseSlug = slug;
+    let i = 2;
+    while (await prisma.page.findFirst({ where: { projectId, slug } })) {
+      slug = `${baseSlug}-${i++}`;
+    }
+  } else {
+    const clash = await prisma.page.findFirst({
+      where: { projectId, slug },
+    });
+    if (clash) throw new ValidationError("Slug must be unique within project");
+  }
 
   const maxOrder = await prisma.page.aggregate({
     where: { projectId, deletedAt: null },
@@ -132,9 +141,9 @@ export async function updatePage(pageId: string, userId: string, input: UpdatePa
 
   if (input.slug && input.slug !== page.slug) {
     const clash = await prisma.page.findFirst({
-      where: { projectId: page.projectId, slug: input.slug, deletedAt: null, NOT: { id: pageId } },
+      where: { projectId: page.projectId, slug: input.slug, NOT: { id: pageId } },
     });
-    if (clash) throw new ValidationError("Slug must be unique within project");
+    if (clash) throw new ValidationError("Slug must be unique within project (including deleted pages)");
   }
 
   if (input.isHome === true) {
