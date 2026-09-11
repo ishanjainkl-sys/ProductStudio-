@@ -11,14 +11,15 @@ import { findNode } from "@productstudio/json-engine";
 function ContextMenuItem({ label, shortcut, disabled, hasSubmenu, onClick, className = "" }: { label: string, shortcut?: string, hasSubmenu?: boolean, disabled?: boolean, onClick: () => void, className?: string }) {
     return (
         <button
-            className={`w-full flex items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs ${disabled ? "text-neutral-400 dark:text-neutral-500 cursor-default" : `text-neutral-700 dark:text-neutral-200 hover:bg-black/5 dark:hover:bg-white/10 ${className}`}`}
+            className={`group w-full flex items-center justify-between rounded-[3px] px-2 py-[3px] mx-1 text-left text-[11px] font-sans leading-tight ${disabled ? "text-[#808080] cursor-default" : `text-[#e0e0e0] hover:bg-[#0D99FF] hover:text-white ${className}`}`}
+            style={{ width: "calc(100% - 8px)" }}
             disabled={disabled}
             onClick={onClick}
         >
             <span className="flex-1">{label}</span>
-            {shortcut && !hasSubmenu && <span className={disabled ? "text-neutral-300 dark:text-neutral-600 ml-4" : "text-neutral-400 dark:text-neutral-400 ml-4"}>{shortcut}</span>}
+            {shortcut && !hasSubmenu && <span className={disabled ? "text-[#555555] ml-4" : "text-[#808080] group-hover:text-white ml-4"}>{shortcut}</span>}
             {hasSubmenu && (
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={disabled ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-400 dark:text-neutral-400"}>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" className={disabled ? "text-[#555555]" : "text-[#808080] group-hover:text-white"}>
                     <path d="M4 2L8.5 6L4 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
             )}
@@ -73,7 +74,7 @@ function FigmaMenuScroller({ children, maxHeight }: { children: React.ReactNode,
         <div className="relative w-full h-full flex flex-col pointer-events-auto overflow-hidden no-canvas-scroll">
             {canScrollUp && (
                 <div
-                    className="absolute top-0 left-0 w-full h-6 bg-gradient-to-b from-[#2C2C2C] to-transparent z-10 flex items-start justify-center cursor-default text-neutral-400 hover:text-white"
+                    className="absolute top-0 left-0 w-full h-6 bg-gradient-to-b from-[#222222] via-[#222222]/90 to-transparent z-10 flex items-start justify-center cursor-default text-[#808080] hover:text-[#e0e0e0]"
                     onMouseEnter={() => startScroll('up')}
                     onMouseLeave={stopScroll}
                     onClick={(e) => e.stopPropagation()}
@@ -104,7 +105,7 @@ function FigmaMenuScroller({ children, maxHeight }: { children: React.ReactNode,
 
             {canScrollDown && (
                 <div
-                    className="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-[#2C2C2C] to-transparent z-10 flex items-end justify-center cursor-default text-neutral-400 hover:text-white"
+                    className="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-[#222222] via-[#222222]/90 to-transparent z-10 flex items-end justify-center cursor-default text-[#808080] hover:text-[#e0e0e0]"
                     onMouseEnter={() => startScroll('down')}
                     onMouseLeave={stopScroll}
                     onClick={(e) => e.stopPropagation()}
@@ -207,8 +208,8 @@ export function Canvas() {
             if (e.detail && e.detail.x !== undefined && e.detail.y !== undefined) {
                 let x = e.detail.x;
                 let y = e.detail.y;
-                const menuW = 220;
-                const menuH = 680; // approximate height
+                const menuW = 240;
+                const menuH = 600; // approximate height
                 if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 10;
                 if (y + menuH > window.innerHeight) y = Math.max(10, window.innerHeight - menuH - 10);
                 setContextMenu({ x, y });
@@ -482,7 +483,13 @@ export function Canvas() {
             }}
             onContextMenu={(e) => {
                 e.preventDefault();
-                setContextMenu({ x: e.clientX, y: e.clientY });
+                let x = e.clientX;
+                let y = e.clientY;
+                const menuW = 240;
+                const menuH = 600;
+                if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 10;
+                if (y + menuH > window.innerHeight) y = Math.max(10, window.innerHeight - menuH - 10);
+                setContextMenu({ x, y });
             }}
             id="canvas-viewport"
         >
@@ -530,12 +537,12 @@ export function Canvas() {
 
             {contextMenu && (
                 <div
-                    className="fixed z-50 rounded-md bg-white text-sm shadow-2xl border border-neutral-200 dark:border-neutral-800 dark:bg-[#2C2C2C] min-w-[220px] overflow-hidden"
+                    className="fixed z-50 rounded-[6px] bg-[#222222] text-[#E0E0E0] shadow-2xl border border-[#333333] min-w-[180px] w-auto max-w-[260px] overflow-hidden py-1"
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                     onClick={(e) => e.stopPropagation()}
                     onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 >
-                    <FigmaMenuScroller maxHeight={Math.max(200, typeof window !== 'undefined' ? window.innerHeight - 20 : 600)}>
+                    <FigmaMenuScroller maxHeight={typeof window !== 'undefined' ? Math.min(window.innerHeight - 20, 420) : 420}>
                         <ContextMenuItem label="Copy" shortcut="Ctrl+C" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); copySelected(); }} />
                         <ContextMenuItem label="Paste here" disabled={!copiedNode || !copiedNode.objects.length} onClick={() => { setContextMenu(null); void pasteCopied(); }} />
                         <ContextMenuItem label="Paste to replace" shortcut="Ctrl+Shift+R" disabled={!copiedNode || !copiedNode.objects.length || !selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); void pasteToReplace(); }} />
@@ -543,13 +550,13 @@ export function Canvas() {
                         <ContextMenuItem label="Send to Figma Make" disabled={true} onClick={() => { }} />
                         <ContextMenuItem label="Add motion" hasSubmenu disabled={true} onClick={() => { }} />
 
-                        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1 mx-1 shrink-0" />
+                        <div className="h-px bg-[#333333] my-[4px] mx-0 shrink-0" />
 
                         <ContextMenuItem label="Move to page" hasSubmenu disabled={true} onClick={() => { }} />
                         <ContextMenuItem label="Bring to front" shortcut="]" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); bringToFront(); }} />
                         <ContextMenuItem label="Send to back" shortcut="[" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); sendToBack(); }} />
 
-                        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1 mx-1 shrink-0" />
+                        <div className="h-px bg-[#333333] my-[4px] mx-0 shrink-0" />
 
                         <ContextMenuItem label="Convert to section" disabled={true} onClick={() => { }} />
                         <ContextMenuItem label="Group selection" shortcut="Ctrl+G" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); groupSelection(); }} />
@@ -560,7 +567,7 @@ export function Canvas() {
                         <ContextMenuItem label="Set as thumbnail" disabled={true} onClick={() => { }} />
                         <ContextMenuItem label="Use as mask" shortcut="Ctrl+Alt+M" disabled={true} onClick={() => { }} />
 
-                        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1 mx-1 shrink-0" />
+                        <div className="h-px bg-[#333333] my-[4px] mx-0 shrink-0" />
 
                         <ContextMenuItem label="Add auto layout" shortcut="Shift+A" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); groupSelection(); }} />
                         <ContextMenuItem label="More layout options" hasSubmenu disabled={true} onClick={() => { }} />
@@ -568,12 +575,12 @@ export function Canvas() {
                         <ContextMenuItem label="Plugins" hasSubmenu disabled={true} onClick={() => { }} />
                         <ContextMenuItem label="Widgets" hasSubmenu disabled={true} onClick={() => { }} />
 
-                        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1 mx-1 shrink-0" />
+                        <div className="h-px bg-[#333333] my-[4px] mx-0 shrink-0" />
 
                         <ContextMenuItem label="Show/Hide" shortcut="Ctrl+Shift+H" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); updateProps(selectedNodeId!, { _hidden: !isHidden }); }} />
                         <ContextMenuItem label="Lock/Unlock" shortcut="Ctrl+Shift+L" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); updateProps(selectedNodeId!, { _locked: !isLocked }); }} />
 
-                        <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-1 mx-1 shrink-0" />
+                        <div className="h-px bg-[#333333] my-[4px] mx-0 shrink-0" />
 
                         <ContextMenuItem label="Flip horizontal" shortcut="Shift+H" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); updateProps(selectedNodeId!, { _flipX: !(activeNodeRef?.props?._flipX === true) }); }} />
                         <ContextMenuItem label="Flip vertical" shortcut="Shift+V" disabled={!selectedNodeId || selectedNodeId === "page"} onClick={() => { setContextMenu(null); updateProps(selectedNodeId!, { _flipY: !(activeNodeRef?.props?._flipY === true) }); }} />

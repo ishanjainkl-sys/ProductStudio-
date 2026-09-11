@@ -235,7 +235,13 @@ export function PagesPanel({ projectId }: { projectId: string }) {
                   onClick={() => void switchPage(p.id)}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    setContextMenu({ x: e.clientX, y: e.clientY, page: p });
+                    let x = e.clientX;
+                    let y = e.clientY;
+                    const menuW = 150;
+                    const menuH = 150;
+                    if (x + menuW > window.innerWidth) x = window.innerWidth - menuW - 10;
+                    if (y + menuH > window.innerHeight) y = Math.max(10, window.innerHeight - menuH - 10);
+                    setContextMenu({ x, y, page: p });
                   }}
                 >
                   {p.name}
@@ -263,12 +269,14 @@ export function PagesPanel({ projectId }: { projectId: string }) {
 
       {contextMenu && (
         <div
-          className="fixed z-50 rounded-md bg-white p-1 text-sm shadow-xl border border-neutral-200 dark:border-white/10 dark:bg-[#2C2C2C] min-w-[150px]"
+          className="fixed z-50 rounded-[6px] bg-[#222222] text-[#E0E0E0] shadow-2xl border border-[#333333] min-w-[150px] w-auto max-w-[250px] overflow-hidden py-1"
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
         >
           <button
-            className="w-full text-left rounded-sm px-2 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-white/5"
+            className="w-full text-left rounded-[4px] px-3 py-[5px] mx-1 text-[11px] font-sans leading-tight text-white hover:bg-[#0D99FF]"
+            style={{ width: "calc(100% - 8px)" }}
             onClick={() => {
               setContextMenu(null);
               void handleCopyPage(contextMenu.page);
@@ -277,7 +285,8 @@ export function PagesPanel({ projectId }: { projectId: string }) {
             Copy Page
           </button>
           <button
-            className="w-full text-left rounded-sm px-2 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-white/5"
+            className="w-full text-left rounded-[4px] px-3 py-[5px] mx-1 text-[11px] font-sans leading-tight text-white hover:bg-[#0D99FF]"
+            style={{ width: "calc(100% - 8px)" }}
             onClick={() => {
               setContextMenu(null);
               void handlePastePage();
@@ -286,7 +295,8 @@ export function PagesPanel({ projectId }: { projectId: string }) {
             Paste Page
           </button>
           <button
-            className="w-full text-left rounded-sm px-2 py-1.5 text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-white/5"
+            className="w-full text-left rounded-[4px] px-3 py-[5px] mx-1 text-[11px] font-sans leading-tight text-white hover:bg-[#0D99FF]"
+            style={{ width: "calc(100% - 8px)" }}
             onClick={() => {
               setContextMenu(null);
               setRenamingPageId(contextMenu.page.id);
@@ -296,7 +306,8 @@ export function PagesPanel({ projectId }: { projectId: string }) {
             Rename Page
           </button>
           <button
-            className={`w-full text-left rounded-sm px-2 py-1.5 ${contextMenu.page.isHome ? "text-neutral-400 cursor-not-allowed" : "text-red-600 hover:bg-neutral-100 dark:hover:bg-white/5"}`}
+            className={`w-full text-left rounded-[4px] px-3 py-[5px] mx-1 text-[11px] font-sans leading-tight ${contextMenu.page.isHome ? "text-neutral-500 cursor-not-allowed" : "text-[#F24822] hover:bg-[#0D99FF] hover:text-white"}`}
+            style={{ width: "calc(100% - 8px)" }}
             disabled={contextMenu.page.isHome}
             onClick={() => {
               setContextMenu(null);
