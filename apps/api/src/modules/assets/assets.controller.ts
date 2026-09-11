@@ -6,7 +6,7 @@ import { ValidationError } from "../../lib/errors.js";
 export async function uploadUrl(req: Request, res: Response, next: NextFunction) {
   try {
     const body = uploadUrlRequestSchema.parse(req.body);
-    const data = await service.requestUploadUrl(req.params.projectId!, req.user!.id, body);
+    const data = await service.requestUploadUrl((req.params.projectId as string), req.user!.id, body);
     res.json({ data });
   } catch (err) {
     next(err);
@@ -23,7 +23,7 @@ export async function upload(req: Request, res: Response, next: NextFunction) {
       mimeType: req.body.mimeType || file.mimetype,
       sizeBytes: Number(req.body.sizeBytes) || file.size,
     });
-    const data = await service.confirmUpload(req.params.projectId!, req.user!.id, {
+    const data = await service.confirmUpload((req.params.projectId as string), req.user!.id, {
       ...meta,
       buffer: file.buffer,
     });
@@ -50,7 +50,7 @@ export async function confirm(req: Request, res: Response, next: NextFunction) {
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await service.listAssets(req.params.projectId!, req.user!.id);
+    const data = await service.listAssets((req.params.projectId as string), req.user!.id);
     res.json({ data });
   } catch (err) {
     next(err);
@@ -59,7 +59,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function usages(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await service.getUsages(req.params.id!, req.user!.id);
+    const data = await service.getUsages((req.params.id as string), req.user!.id);
     res.json({ data });
   } catch (err) {
     next(err);
@@ -69,7 +69,7 @@ export async function usages(req: Request, res: Response, next: NextFunction) {
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
     const force = req.query.force === "true";
-    await service.deleteAsset(req.params.id!, req.user!.id, force);
+    await service.deleteAsset((req.params.id as string), req.user!.id, force);
     res.json({ data: { ok: true } });
   } catch (err) {
     next(err);

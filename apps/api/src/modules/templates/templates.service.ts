@@ -131,7 +131,7 @@ export async function publishNewTemplateVersion(templateId: string, projectId: s
           slug: page.slug,
           isHome: page.isHome,
           sortOrder: page.sortOrder,
-          contentJson: structuredClone(page.contentJson as PageDocument) as object,
+          contentJson: structuredClone(page.contentJson as unknown as PageDocument) as object,
         },
       });
     }

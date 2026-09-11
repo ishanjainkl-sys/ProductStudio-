@@ -40,7 +40,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function get(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await service.getProject(req.params.id!, req.user!.id);
+    const data = await service.getProject((req.params.id as string), req.user!.id);
     res.json({ data });
   } catch (err) {
     next(err);
@@ -50,7 +50,7 @@ export async function get(req: Request, res: Response, next: NextFunction) {
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const body = updateProjectSchema.parse(req.body);
-    const data = await service.updateProject(req.params.id!, req.user!.id, body);
+    const data = await service.updateProject((req.params.id as string), req.user!.id, body);
     res.json({ data });
   } catch (err) {
     next(err);
@@ -59,7 +59,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
-    await service.softDeleteProject(req.params.id!, req.user!.id);
+    await service.softDeleteProject((req.params.id as string), req.user!.id);
     res.json({ data: { ok: true } });
   } catch (err) {
     next(err);
@@ -68,7 +68,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 
 export async function restore(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await service.restoreProject(req.params.id!, req.user!.id);
+    const data = await service.restoreProject((req.params.id as string), req.user!.id);
     res.json({ data });
   } catch (err) {
     next(err);

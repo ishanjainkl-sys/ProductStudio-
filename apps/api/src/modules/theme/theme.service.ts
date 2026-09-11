@@ -8,7 +8,7 @@ export async function getTheme(projectId: string, userId: string) {
   await requireProjectAccess(projectId, userId);
   const theme = await prisma.theme.findUnique({ where: { projectId } });
   if (!theme) throw new NotFoundError("Theme not found");
-  return { id: theme.id, projectId, tokens: theme.tokensJson as ThemeTokens };
+  return { id: theme.id, projectId, tokens: theme.tokensJson as unknown as ThemeTokens };
 }
 
 export async function updateTheme(projectId: string, userId: string, tokens: unknown) {
@@ -30,7 +30,7 @@ export async function updateTheme(projectId: string, userId: string, tokens: unk
     where: { projectId },
     data: { tokensJson: parsed.data },
   });
-  return { id: theme.id, projectId, tokens: theme.tokensJson as ThemeTokens };
+  return { id: theme.id, projectId, tokens: theme.tokensJson as unknown as ThemeTokens };
 }
 
 export async function getSettings(projectId: string, userId: string) {

@@ -19,6 +19,12 @@ const envSchema = z.object({
   MAX_ASSET_BYTES: z.coerce.number().int().positive().default(10 * 1024 * 1024),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   GEMINI_API_KEY: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_SECURE: z.coerce.boolean().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

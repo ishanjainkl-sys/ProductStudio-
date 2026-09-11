@@ -107,7 +107,7 @@ async function initializeProjectDefaults(
     data: {
       id: generateId("thm"),
       projectId: project.id,
-      tokensJson: DEFAULT_THEME_TOKENS,
+      tokensJson: DEFAULT_THEME_TOKENS as any,
     },
   });
 
@@ -148,7 +148,7 @@ export async function createBlankProject(ownerId: string, input: Extract<CreateP
         slug: "/",
         isHome: true,
         sortOrder: 0,
-        contentJson: content,
+        contentJson: content as any,
         seoTitle: "Home",
         seoDescription: "",
         version: 1,
@@ -232,7 +232,7 @@ export async function createProjectFromTemplate(
           slug: tPage.slug,
           isHome: tPage.isHome,
           sortOrder: tPage.sortOrder,
-          contentJson: doc,
+          contentJson: doc as any,
           seoTitle: doc.seo.title ?? tPage.name,
           seoDescription: doc.seo.description ?? "",
           version: 1,
@@ -259,7 +259,7 @@ export async function createProjectFromTemplate(
             slug: "/",
             isHome: true,
             sortOrder: 0,
-            contentJson: content,
+            contentJson: content as any,
             version: 1,
           },
         }),

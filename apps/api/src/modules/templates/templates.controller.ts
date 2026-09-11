@@ -13,7 +13,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function versions(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await service.listVersions(req.params.id!);
+    const data = await service.listVersions((req.params.id as string));
     res.json({ data });
   } catch (err) {
     next(err);
@@ -24,7 +24,7 @@ export async function saveAsTemplate(req: Request, res: Response, next: NextFunc
   try {
     const body = createTemplateSchema.parse(req.body);
     const data = await service.createTemplateFromProject(
-      req.params.projectId!,
+      (req.params.projectId as string),
       req.user!.id,
       body,
     );
