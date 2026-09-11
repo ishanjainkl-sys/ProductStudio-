@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: productstudio-api
+    env: node
+    plan: free
+    buildCommand: npm install && npx turbo run build --filter=@productstudio/api
+    startCommand: npm run migrate:deploy -w @productstudio/api && npm run start -w @productstudio/api
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: productstudio-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: "https://your-vercel-domain.vercel.app" # UPDATE THIS LATER
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: NODE_ENV
+        value: production
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+
+databases:
+  - name: productstudio-db
+    databaseName: productstudio
+    user: productstudio_user
+    plan: free
